@@ -1082,3 +1082,83 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
           <button data-p="a-animateurs"><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M12 14a4 4 0 0 0 4-4V6a4 4 0 1 0-8 0v4a4 4 0 0 0 4 4Z"/><path d="M19 10a7 7 0 0 1-14 0M12 17v4M8 21h8"/></svg></span><span>Anim.</span></button>
           <button data-p="a-planning"><span class="i24h-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span><span>Planning</span></button>
           <button data-p="a-dons"><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.3-9.3-8.4C.8 8.2 3.4 4.5 7 4.5c2.2 0 3.8 1.2 5 3 1.2-1.8 2.8-3 5-3 3.6 0 6.2 3.7 4.3 7.1C19 15.7 12 20 12 20Z"/></svg></span><span>Dons</span></button>
+<script id="i24h-v3-behavior">
+(function(){
+  const PLUS='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+  const CLOSE='<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+  function toast(message){
+    let el=document.querySelector('.v3-toast');
+    if(!el){el=document.createElement('div');el.className='v3-toast';document.body.appendChild(el)}
+    el.textContent=message;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2200);
+  }
+  function lists(){
+    if(innerWidth>900){
+      document.querySelectorAll('.v3-mobile-list').forEach(x=>x.remove());
+      document.querySelectorAll('table.wtable.v3-mobile-source').forEach(t=>t.classList.remove('v3-mobile-source'));
+      return;
+    }
+    document.querySelectorAll('table.wtable').forEach(table=>{
+      table.classList.add('v3-mobile-source');
+      if(table.nextElementSibling?.classList.contains('v3-mobile-list'))return;
+      const rows=[...table.querySelectorAll('tr')];if(rows.length<2)return;
+      const heads=[...rows[0].children].map(x=>x.textContent.trim());
+      const list=document.createElement('div');list.className='v3-mobile-list';
+      rows.slice(1).forEach(row=>{
+        const cells=[...row.children];if(!cells.length)return;
+        const card=document.createElement('div');card.className='v3-list-card';
+        const main=document.createElement('div');main.className='v3-list-main';
+        const name=document.createElement('div');name.innerHTML='<div class="v3-list-name">'+(cells[0]?.textContent.trim()||'')+'</div><div class="v3-list-meta">'+(cells[1]?.textContent.trim()||'')+'</div>';
+        main.appendChild(name);
+        const ac=cells[cells.length-1];
+        if(ac?.classList.contains('row-actions')){
+          const actions=document.createElement('div');actions.className='v3-list-actions';
+          [...ac.querySelectorAll('button')].forEach(b=>actions.appendChild(b.cloneNode(true)));main.appendChild(actions);
+        }
+        card.appendChild(main);
+        const fields=document.createElement('div');fields.className='v3-list-fields';
+        cells.forEach((cell,n)=>{
+          if(n===0||cell.classList.contains('row-actions'))return;
+          const f=document.createElement('div');f.className='v3-field-mini';f.innerHTML='<span>'+(heads[n]||'')+'</span><b>'+cell.innerHTML+'</b>';fields.appendChild(f);
+        });
+        if(fields.children.length)card.appendChild(fields);list.appendChild(card);
+      });
+      table.parentNode.insertBefore(list,table.nextSibling);
+    });
+  }
+  function planning(){
+    const panel=document.getElementById('a-planning');if(!panel||panel.querySelector('[data-v3-add]'))return;
+    const bar=document.createElement('div');bar.className='v3-toolbar';
+    bar.innerHTML='<div><div class="v3-section-title">Planning 24/7</div><div class="v3-section-sub">Gérez les relais et évitez les interruptions de direct.</div></div><button class="v3-add" data-v3-add type="button">'+PLUS+' Ajouter au planning</button>';
+    panel.insertBefore(bar,panel.firstChild);
+    bar.querySelector('button').onclick=()=>openPlan();
+  }
+  function openPlan(){
+    let m=document.querySelector('.v3-planning-modal');
+    if(!m){
+      m=document.createElement('div');m.className='v3-planning-modal';
+      m.innerHTML='<div class="v3-dialog" role="dialog" aria-modal="true"><div class="v3-dialog-head"><h3>Ajouter au planning</h3><button class="v3-close" type="button">'+CLOSE+'</button></div><form class="v3-form"><div class="v3-form-grid"><div class="v3-field"><label>Émission</label><input name="emission" required placeholder="Ex. Réveil du Matin"></div><div class="v3-field"><label>Animateur</label><select name="animator"><option>Edith A.</option><option>Chadrac T.</option><option>Ruth K.</option><option>Paul D.</option></select></div></div><div class="v3-form-grid"><div class="v3-field"><label>Date</label><input name="date" type="date" required></div><div class="v3-field"><label>Répétition</label><select name="repeat"><option>Aucune</option><option>Tous les jours</option><option>Toutes les semaines</option></select></div></div><div class="v3-form-grid"><div class="v3-field"><label>Début</label><input name="start" type="time" required value="09:00"></div><div class="v3-field"><label>Fin</label><input name="end" type="time" required value="10:00"></div></div><div class="v3-form-actions"><button type="button" class="v3-secondary" data-close>Annuler</button><button type="submit" class="v3-add">Publier dans le planning</button></div></form></div>';
+      document.body.appendChild(m);
+      const close=()=>m.classList.remove('open');m.querySelector('.v3-close').onclick=close;m.querySelector('[data-close]').onclick=close;m.onclick=e=>{if(e.target===m)close()};
+      m.querySelector('form').onsubmit=e=>{
+        e.preventDefault();const d=new FormData(e.target),t=document.querySelector('#a-planning table.wtable');
+        if(t){const tr=document.createElement('tr');tr.innerHTML='<td>'+d.get('start')+'–'+d.get('end')+'</td><td>'+d.get('animator')+'</td><td>'+d.get('emission')+'</td><td><span class="chip off">À venir</span></td><td class="row-actions"><button aria-label="Modifier">Modifier</button></td>';t.appendChild(tr)}
+        close();e.target.reset();toast('Émission ajoutée au planning');lists();
+      };
+    }
+    const date=m.querySelector('[name=date]');if(date&&!date.value)date.value=new Date().toISOString().slice(0,10);
+    m.classList.add('open');m.querySelector('[name=emission]').focus();
+  }
+  function actions(){
+    document.querySelectorAll('.wpanel .row-actions button').forEach(b=>{if(b.dataset.v3Bound)return;b.dataset.v3Bound='1';b.onclick=()=>toast('Action enregistrée')});
+    document.querySelectorAll('#a-dashboard .wbtn').forEach(b=>{if(b.dataset.v3Bound)return;b.dataset.v3Bound='1';b.onclick=()=>toast(b.textContent.includes('studio')?'Ouverture du studio animateur':'Gestion du direct ouverte')});
+  }
+  function health(){
+    const video=document.querySelector('.studio-video');if(!video||video.parentElement.querySelector('.v3-broadcast-health'))return;
+    const box=document.createElement('div');box.className='v3-broadcast-health';box.innerHTML='<div class="v3-health-item"><b>Caméra</b><span>● Opérationnelle</span></div><div class="v3-health-item"><b>Micro</b><span>● Niveau optimal</span></div><div class="v3-health-item"><b>Connexion</b><span>● 18 Mbps · Stable</span></div>';video.parentElement.appendChild(box);
+  }
+  function init(){planning();lists();actions();health();addEventListener('resize',()=>{clearTimeout(window._v3r);window._v3r=setTimeout(lists,160)});}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script>
+</body>
+</html>
