@@ -1160,5 +1160,111 @@ button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-vis
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
 </script>
-</body>
+<script id="i24h-functional-core">
+(function(){
+  const $=(s,r=document)=>r.querySelector(s);
+  const $=(s,r=document)=>[...r.querySelectorAll(s)];
+  const toast=(message)=>{
+    let el=$('.v3-toast'); if(!el){el=document.createElement('div');el.className='v3-toast';document.body.appendChild(el)}
+    el.textContent=message;el.classList.add('show');clearTimeout(el._t);el._t=setTimeout(()=>el.classList.remove('show'),2200);
+  };
+
+  window.I24H=window.I24H||{};
+  window.I24H.showToast=toast;
+  window.I24H.openIntentions=()=>{toast('Ouverture des intentions de prière'); const el=$('#page-home .intentions-card')||$('#page-home .v21-intention'); if(el) el.scrollIntoView({behavior:'smooth',block:'center'})};
+  window.I24H.openProgramme=()=>{const b=$('.nav-item[data-page="programme"]');if(b)b.click();else toast('Programme ouvert')};
+  window.I24H.openReplay=()=>{const b=$('.nav-item[data-page="replay"]');if(b)b.click();else toast('Replay ouvert')};
+  window.I24H.openDon=()=>{const b=$('.nav-item[data-page="don"]');if(b)b.click();else toast('Espace don ouvert')};
+
+  function platform(target){
+    $('.platform-btn').forEach(b=>b.classList.toggle('active',b.dataset.target===target));
+    ['view-mobile','view-admin','view-animateur'].forEach(id=>{const el=$('#'+id);if(el)el.style.display=id===target?'block':'none'});
+    const el=$('#'+target);if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+  }
+
+  function onboarding(){
+    const ob=$('#onboarding');if(!ob)return;
+    const slides=$('.ob-slide',ob), track=$('#obTrack'), dots=$('#obDots button',ob), next=$('#obNext'), skip=$('#obSkip');
+    let current=0;
+    const render=()=>{
+      if(track)track.style.transform='translateX(-'+(current*100)+'%)';
+      slides.forEach((s,i)=>s.classList.toggle('active',i===current));
+      dots.forEach((d,i)=>d.classList.toggle('active',i===current));
+      if(next){const label=$('#obNextLabel');if(label)label.textContent=current===slides.length-1?'Commencer':'Suivant'}
+    };
+    if(next)next.onclick=()=>{if(current<slides.length-1){current++;render()}else{$('#onboarding').style.display='none';$('#auth').style.display='block'}};
+    if(skip)skip.onclick=()=>{$('#onboarding').style.display='none';$('#auth').style.display='block'};
+    render();
+  }
+
+  function auth(){
+    const signup=$('#authSignup'),login=$('#authLogin'),guest=$('#authGuest');
+    const show=(mode)=>{if(signup)signup.style.display=mode==='signup'?'block':'none';if(login)login.style.display=mode==='login'?'block':'none'};
+    const goLogin=$('#goLogin'),goSignup=$('#goSignup'),toggle=$('#authToggle'),obToggle=$('#obToggle');
+    if(goLogin)goLogin.onclick=()=>show('login');
+    if(goSignup)goSignup.onclick=()=>show('signup');
+    if(toggle)toggle.onclick=()=>{show(login&&login.style.display!=='none'?'signup':'login')};
+    if(obToggle)obToggle.onclick=()=>{$('#auth').style.display='none';$('#onboarding').style.display='block'};
+    $('#btnSignup')?.addEventListener('click',e=>{e.preventDefault();toast('Compte créé — bienvenue sur I24H');show('login')});
+    $('#btnLogin')?.addEventListener('click',e=>{e.preventDefault();toast('Connexion réussie');showMobileHome()});
+    guest?.addEventListener('click',e=>{e.preventDefault();toast('Accès invité activé');showMobileHome()});
+  }
+
+  function showMobileHome(){
+    $('#auth')&&( $('#auth').style.display='none');
+    $('#onboarding')&&( $('#onboarding').style.display='none');
+    $('#view-mobile')&&( $('#view-mobile').style.display='block');
+    const b=$('.nav-item[data-page="home"]');if(b)b.click();
+  }
+
+  function mobileNav(){
+    const pages=['home','programme','replay','don','profil'];
+    $('.nav-item[data-page]').forEach(btn=>btn.addEventListener('click',()=>{
+      const page=btn.dataset.page;
+      pages.forEach(p=>{const el=$('#page-'+p);if(el)el.style.display=p===page?'block':'none'});
+      $('.nav-item[data-page]').forEach(b=>b.classList.toggle('active',b===btn));
+      toast(page==='home'?'Accueil':page==='programme'?'Programme':page==='replay'?'Replay':page==='don'?'Dons':'Profil');
+    }));
+    $('.day-tabs button').forEach(btn=>btn.onclick=()=>{$('.day-tabs button').forEach(x=>x.classList.remove('active'));btn.classList.add('active');toast('Programme mis à jour')});
+  }
+
+  function adminNav(){
+    const panels=$('.wpanel[id^="a-"]');
+    $('.web-nav-item[data-p],.web-bottombar button[data-p]').forEach(btn=>btn.addEventListener('click',()=>{
+      const p=btn.dataset.p;panels.forEach(x=>x.style.display=x.id===p?'block':'none');
+      $('.web-nav-item[data-p],.web-bottombar button[data-p]').forEach(x=>x.classList.toggle('active',x.dataset.p===p));
+      const title=$('#a-title'); if(title){const label=btn.querySelector('.lbl')?.textContent||btn.textContent.trim();if(label)title.textContent=label}
+    }));
+  }
+
+  function devices(){
+    $('.device-toggle').forEach(scope=>{
+      const frame=scope.nextElementSibling;
+      $('.device-btn',scope).forEach(btn=>btn.onclick=()=>{
+        $('.device-btn',scope).forEach(x=>x.classList.remove('active'));btn.classList.add('active');
+        if(frame){frame.classList.remove('w-desktop','w-tablet','w-mobile');frame.classList.add(btn.dataset.w||'w-desktop')}
+      });
+    });
+  }
+
+  function genericButtons(){
+    $('button').forEach(btn=>{
+      if(btn.dataset.functionalBound||btn.hasAttribute('disabled'))return;
+      btn.dataset.functionalBound='1';
+      if(btn.getAttribute('onclick')||btn.dataset.page||btn.dataset.p||btn.classList.contains('platform-btn')||btn.classList.contains('device-btn')||btn.id) return;
+      btn.addEventListener('click',()=>toast(btn.textContent.trim()||'Action effectuée'));
+    });
+    $('.platform-btn').forEach(b=>{if(!b.dataset.platformBound){b.dataset.platformBound='1';b.onclick=()=>platform(b.dataset.target)}});
+
+    $('.replay-card,.slot').forEach(card=>{card.addEventListener('click',()=>toast(card.classList.contains('replay-card')?'Lecture du replay':'Créneau sélectionné'))});
+    $('.donate-cta').forEach(b=>{b.addEventListener('click',()=>toast('Ouverture du don sécurisé'))});
+  }
+
+  function init(){
+    platform('view-mobile');
+    onboarding();auth();mobileNav();adminNav();devices();genericButtons();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
+})();
+</script></body>
 </html>
