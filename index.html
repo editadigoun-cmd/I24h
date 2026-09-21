@@ -1,24 +1,1450 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>I24H — Maquette</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>I24H — Maquette V2.4 · Admin 24/7</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --blue-deep:#0F2C63;
+    --blue:#1B3E7D;
+    --blue-mid:#2C5FA8;
+    --orange:#E8752C;
+    --orange-light:#F2994A;
+    --ink:#141414;
+    --ink-soft:#5B6472;
+    --bg:#F4F6FA;
+    --card:#FFFFFF;
+    --line:#E4E8F0;
+    --white:#FFFFFF;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:'Inter', sans-serif;
+    background:#E7ECF4;
+    color:var(--ink);
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  h1,h2,h3{ font-family:'Fraunces', serif; }
+  ::-webkit-scrollbar{ width:0; height:0; }
+
+  /* ============ TOP SWITCHER ============ */
+  .switcher-bar{
+    position:sticky; top:0; z-index:200;
+    background:var(--blue-deep);
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:14px 16px; flex-wrap:wrap;
+  }
+  .switcher-bar .brand{
+    color:#fff; font-family:'Fraunces'; font-style:italic; font-weight:600; font-size:18px;
+    margin-right:18px;
+  }
+  .switcher-bar .brand b{ font-style:normal; color:var(--orange-light); }
+  .platform-btn{
+    background:rgba(255,255,255,.08); color:rgba(255,255,255,.75); border:1px solid rgba(255,255,255,.15);
+    padding:9px 16px; border-radius:24px; font-weight:600; font-size:13px; cursor:pointer;
+  }
+  .platform-btn.active{ background:var(--orange); color:#fff; border-color:var(--orange); }
+
+  .platform-view{ display:none; padding:34px 16px 10px; }
+  .platform-view.active{ display:block; }
+
+  .section-label{
+    text-align:center; font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--blue); margin-bottom:16px;
+  }
+
+  /* ============ DEVICE TOGGLE (web views) ============ */
+  .device-toggle{
+    display:flex; justify-content:center; gap:8px; margin-bottom:24px;
+  }
+  .device-btn{
+    display:flex; align-items:center; gap:7px;
+    background:#fff; border:1px solid var(--line); color:var(--ink-soft);
+    padding:8px 16px; border-radius:20px; font-weight:600; font-size:12.5px; cursor:pointer;
+  }
+  .device-btn.active{ background:var(--blue); color:#fff; border-color:var(--blue); }
+  .device-btn svg{ width:15px; height:15px; }
+
+  /* ================================================================
+     MOBILE APP (phone frame)
+  ================================================================= */
+  .phone-wrap{ display:flex; flex-direction:column; align-items:center; }
+  .phone{
+    width:375px; height:812px; background:#000; border-radius:52px; padding:14px;
+    box-shadow:0 30px 60px -20px rgba(11,27,46,.45), 0 10px 20px -8px rgba(11,27,46,.25);
+    position:relative; margin:0 auto;
+  }
+  .screen{
+    width:100%; height:100%; background:var(--bg); border-radius:38px; overflow:hidden;
+    position:relative; display:flex; flex-direction:column;
+  }
+  .notch{ position:absolute; top:14px; left:50%; transform:translateX(-50%); width:120px; height:26px; background:#000; border-radius:16px; z-index:50; }
+  .statusbar{ height:46px; flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; padding:0 26px; font-size:14px; font-weight:600; color:var(--ink); }
+  .statusbar .icons{ display:flex; gap:5px; align-items:center; }
+  .app-header{ flex:0 0 auto; padding:6px 20px 14px; display:flex; align-items:center; justify-content:space-between; }
+  .logo{ font-family:'Fraunces', serif; font-style:italic; font-weight:600; font-size:22px; color:var(--blue); letter-spacing:.01em; }
+  .logo b{ font-style:normal; color:var(--orange); }
+  .icon-btn{ width:38px; height:38px; border-radius:12px; background:var(--card); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; position:relative; color:var(--blue); }
+  .dot-badge{ position:absolute; top:7px; right:7px; width:7px; height:7px; border-radius:50%; background:var(--orange); box-shadow:0 0 0 2px var(--card); }
+  .content{ flex:1 1 auto; overflow-y:auto; padding:0 20px 14px; }
+  .bottom-nav{ flex:0 0 auto; display:flex; justify-content:space-around; align-items:center; padding:10px 10px 26px; background:var(--card); border-top:1px solid var(--line); }
+  .nav-item{ display:flex; flex-direction:column; align-items:center; gap:4px; color:#9AA9BE; font-size:11px; font-weight:600; background:none; border:none; cursor:pointer; padding:4px 10px; font-family:'Inter'; }
+  .nav-item.active{ color:var(--blue); }
+  .nav-item svg{ width:22px; height:22px; }
+
+  .player{ position:relative; border-radius:22px; overflow:hidden; height:210px; background:#000; display:flex; align-items:center; justify-content:center; }
+  .yt-frame{ position:absolute; inset:0; width:100%; height:100%; border:0; }
+  .live-badge{ position:absolute; top:14px; left:14px; display:flex; align-items:center; gap:6px; background:rgba(11,27,46,.55); padding:5px 10px 5px 8px; border-radius:20px; font-size:11px; font-weight:700; color:#fff; letter-spacing:.04em; pointer-events:none; z-index:5; }
+  .pulse-dot{ width:7px; height:7px; border-radius:50%; background:var(--orange); position:relative; }
+  .pulse-dot::before{ content:''; position:absolute; inset:-5px; border-radius:50%; background:var(--orange); opacity:.5; animation:pulseRing 1.8s ease-out infinite; }
+  @keyframes pulseRing{ 0%{transform:scale(.5); opacity:.6;} 100%{transform:scale(2.4); opacity:0;} }
+  .viewers{ position:absolute; top:14px; right:14px; background:rgba(11,27,46,.55); padding:5px 10px; border-radius:20px; font-size:11px; font-weight:600; color:#fff; display:flex; align-items:center; gap:5px; pointer-events:none; z-index:5; }
+  .float-hearts{ pointer-events:none; }
+  .float-hearts span{ position:absolute; bottom:20px; font-size:16px; opacity:0; animation:floatUp 3.2s ease-in infinite; z-index:5; }
+  .float-hearts span:nth-child(1){ left:38%; animation-delay:.2s; }
+  .float-hearts span:nth-child(2){ left:55%; animation-delay:1.4s; }
+  .float-hearts span:nth-child(3){ left:47%; animation-delay:2.4s; }
+  @keyframes floatUp{ 0%{ opacity:0; transform:translateY(0) scale(.8);} 15%{ opacity:1;} 100%{ opacity:0; transform:translateY(-120px) scale(1.1);} }
+
+  .emission-title{ font-family:'Fraunces', serif; font-weight:600; font-size:21px; margin-top:16px; color:var(--ink); }
+  .animator-row{ display:flex; align-items:center; gap:8px; margin-top:8px; color:var(--ink-soft); font-size:13px; font-weight:500; }
+  .avatar{ width:24px; height:24px; border-radius:50%; background:linear-gradient(135deg,var(--blue),var(--blue-mid)); display:flex; align-items:center; justify-content:center; color:#fff; font-size:10px; font-weight:700; }
+  .reactions{ display:flex; gap:10px; margin-top:18px; }
+  .reactions button{ flex:1; height:44px; border-radius:14px; border:1px solid var(--line); background:var(--card); font-size:18px; display:flex; align-items:center; justify-content:center; }
+  .chat-card{ margin-top:16px; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px 14px 12px; }
+  .chat-card h4{ font-size:12px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--blue); margin-bottom:10px; }
+  .msg{ display:flex; gap:8px; margin-bottom:10px; font-size:13px; }
+  .msg b{ color:var(--blue); }
+  .msg span{ color:var(--ink-soft); }
+  .chat-input{ display:flex; align-items:center; gap:8px; border:1px solid var(--line); border-radius:12px; padding:9px 12px; margin-top:4px; color:#9AA9BE; font-size:12.5px; }
+  .donate-cta{ margin-top:16px; width:100%; border:none; border-radius:16px; padding:15px; background:linear-gradient(135deg, var(--orange), var(--orange-light)); color:#fff; font-weight:700; font-size:14.5px; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 12px 20px -8px rgba(232,117,44,.5); }
+
+  .page-title{ font-family:'Fraunces', serif; font-weight:600; font-size:26px; margin:4px 0 16px; color:var(--ink); }
+  .day-tabs{ display:flex; gap:8px; margin-bottom:16px; }
+  .day-tabs button{ padding:8px 14px; border-radius:20px; border:1px solid var(--line); background:var(--card); font-size:12.5px; font-weight:600; color:var(--ink-soft); }
+  .day-tabs button.active{ background:var(--blue); border-color:var(--blue); color:#fff; }
+  .slot{ display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px 14px; margin-bottom:10px; }
+  .slot.now{ border-color:var(--orange); box-shadow:0 0 0 3px rgba(232,117,44,.15); }
+  .slot .time{ width:64px; font-size:12px; font-weight:700; color:var(--blue); line-height:1.3; }
+  .slot .info{ flex:1; }
+  .slot .info .name{ font-size:13.5px; font-weight:600; color:var(--ink); }
+  .slot .info .role{ font-size:11.5px; color:var(--ink-soft); margin-top:2px;}
+  .badge-now{ font-size:10px; font-weight:700; color:#fff; background:var(--orange); padding:3px 8px; border-radius:20px; }
+
+  .replay-card{ display:flex; gap:12px; margin-bottom:14px; }
+  .thumb{ width:104px; height:70px; border-radius:12px; flex:0 0 auto; background:var(--blue); position:relative; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .thumb img{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .thumb .playbtn{ position:relative; z-index:2; width:26px; height:26px; fill:#fff; filter:drop-shadow(0 1px 4px rgba(0,0,0,.6)); }
+  .thumb .dur{ position:absolute; bottom:5px; right:6px; z-index:2; font-size:9px; color:#fff; background:rgba(0,0,0,.55); padding:2px 5px; border-radius:6px; font-weight:600; }
+  .replay-info{ flex:1; }
+  .replay-info .t{ font-size:13.5px; font-weight:600; color:var(--ink); margin-bottom:3px;}
+  .replay-info .m{ font-size:11.5px; color:var(--ink-soft); }
+
+  .profile-head{ display:flex; flex-direction:column; align-items:center; margin:6px 0 20px; }
+  .profile-avatar{ width:74px; height:74px; border-radius:50%; background:linear-gradient(135deg,var(--blue),var(--blue-mid)); display:flex; align-items:center; justify-content:center; color:#fff; font-family:'Fraunces'; font-size:26px; font-weight:600; margin-bottom:10px; }
+  .profile-head .pname{ font-weight:700; font-size:16px; }
+  .profile-head .pmail{ font-size:12px; color:var(--ink-soft); margin-top:2px; }
+  .stat-row{ display:flex; gap:10px; margin-bottom:18px; }
+  .stat-card{ flex:1; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:12px; text-align:center; }
+  .stat-card .num{ font-family:'Fraunces'; font-size:20px; font-weight:600; color:var(--blue);}
+  .stat-card .lab{ font-size:10.5px; color:var(--ink-soft); margin-top:2px; }
+  .menu-item{ display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:13px 14px; margin-bottom:9px; font-size:13.5px; font-weight:600; color:var(--ink); }
+  .menu-item svg{ width:18px; height:18px; color:var(--blue); flex:0 0 auto; }
+  .menu-item .chev{ margin-left:auto; color:#C4CEDC; }
+
+  /* donation screen */
+  .amount-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:16px; }
+  .amount-grid button{ padding:14px 0; border-radius:14px; border:1px solid var(--line); background:var(--card); font-weight:700; font-size:14px; color:var(--ink); }
+  .amount-grid button.active{ background:var(--orange); border-color:var(--orange); color:#fff; }
+  .pay-method{ display:flex; align-items:center; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:13px 14px; margin-bottom:10px; }
+  .pay-method.active{ border-color:var(--blue); box-shadow:0 0 0 3px rgba(27,62,125,.12); }
+  .pay-method .radio{ width:18px; height:18px; border-radius:50%; border:2px solid var(--line); flex:0 0 auto; }
+  .pay-method.active .radio{ border-color:var(--blue); background:radial-gradient(circle,var(--blue) 0 40%, transparent 42%); }
+  .pay-method .plabel{ font-size:13px; font-weight:600; }
+  .anon-row{ display:flex; align-items:center; justify-content:space-between; background:var(--card); border:1px solid var(--line); border-radius:14px; padding:13px 14px; margin:14px 0 18px; font-size:12.5px; font-weight:600; }
+  .switch{ width:40px; height:22px; border-radius:12px; background:var(--line); position:relative; }
+  .switch.on{ background:var(--blue); }
+  .switch::after{ content:''; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff; transition:.2s; }
+  .switch.on::after{ left:20px; }
+
+  /* onboarding + auth (shared with previous design, recolored) */
+  .onboarding{ position:absolute; inset:0; z-index:60; background:linear-gradient(180deg,var(--blue), var(--blue-deep) 60%, #071a3d); display:flex; flex-direction:column; transition:opacity .3s ease; }
+  .onboarding.hidden{ opacity:0; pointer-events:none; }
+  .ob-track{ flex:1; position:relative; overflow:hidden; }
+  .ob-slide{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 34px; opacity:0; transform:translateX(40px); transition:opacity .45s ease, transform .45s ease; text-align:center; }
+  .ob-slide.active{ opacity:1; transform:translateX(0); }
+  .ob-art{ width:168px; height:168px; margin-bottom:34px; }
+  .ob-title{ font-family:'Fraunces', serif; font-weight:600; font-size:24px; color:#fff; line-height:1.25; margin-bottom:10px; }
+  .ob-sub{ font-size:13px; color:rgba(255,255,255,.65); line-height:1.5; max-width:270px; }
+  .ob-bottom{ padding:18px 28px 40px; }
+  .ob-dots{ display:flex; gap:6px; justify-content:center; margin-bottom:20px; }
+  .ob-dots span{ width:6px; height:6px; border-radius:50%; background:rgba(255,255,255,.3); transition:all .3s; }
+  .ob-dots span.active{ width:20px; border-radius:4px; background:#fff; }
+  .ob-actions{ display:flex; align-items:center; justify-content:space-between; }
+  .ob-skip{ background:none; border:none; color:rgba(255,255,255,.55); font-size:13px; font-weight:600; font-family:'Inter'; }
+  .ob-next{ background:#fff; color:var(--blue); border:none; border-radius:26px; padding:13px 26px; font-weight:700; font-size:13.5px; display:flex; align-items:center; gap:8px; }
+  .ob-toggle{ margin-top:18px; background:var(--blue); color:#fff; border:none; padding:10px 18px; border-radius:30px; font-family:'Inter'; font-weight:600; font-size:12.5px; cursor:pointer; }
+
+  .auth{ position:absolute; inset:0; z-index:55; background:var(--bg); display:flex; flex-direction:column; opacity:1; transition:opacity .3s ease; }
+  .auth.hidden{ opacity:0; pointer-events:none; }
+  .auth-wave{ height:96px; flex:0 0 auto; background:linear-gradient(150deg,var(--blue),var(--blue-mid) 60%,#5AA0E0); border-radius:0 0 32px 32px; display:flex; align-items:flex-end; justify-content:center; padding-bottom:14px; position:relative; overflow:hidden; }
+  .auth-wave .logo{ color:#fff; font-size:20px; position:relative; z-index:2; }
+  .auth-wave svg.deco{ position:absolute; bottom:-2px; left:0; width:100%; height:40px; opacity:.5; }
+  .auth-body{ flex:1; overflow-y:auto; padding:22px 24px 26px; }
+  .auth-title{ font-family:'Fraunces', serif; font-weight:600; font-size:22px; color:var(--ink); margin-bottom:4px; }
+  .auth-sub{ font-size:12.5px; color:var(--ink-soft); margin-bottom:20px; }
+  .field{ margin-bottom:13px; }
+  .field label{ display:block; font-size:11.5px; font-weight:700; color:var(--blue); margin-bottom:6px; letter-spacing:.02em; }
+  .field input{ width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line); background:var(--card); font-family:'Inter'; font-size:13.5px; color:var(--ink); outline:none; }
+  .field-check{ display:flex; align-items:flex-start; gap:8px; margin:14px 0 18px; }
+  .field-check span{ font-size:11.5px; color:var(--ink-soft); line-height:1.5; }
+  .auth-cta{ width:100%; border:none; border-radius:14px; padding:14px; background:linear-gradient(135deg,var(--blue),var(--blue-mid)); color:#fff; font-weight:700; font-size:14px; box-shadow:0 12px 20px -8px rgba(11,61,145,.45); }
+  .auth-divider{ display:flex; align-items:center; gap:10px; margin:18px 0; font-size:11px; color:#AEB9C8; font-weight:600; }
+  .auth-divider::before, .auth-divider::after{ content:''; flex:1; height:1px; background:var(--line); }
+  .social-row{ display:flex; gap:10px; margin-bottom:20px; }
+  .social-btn{ flex:1; display:flex; align-items:center; justify-content:center; gap:8px; border:1px solid var(--line); background:var(--card); border-radius:12px; padding:11px; font-size:12.5px; font-weight:600; color:var(--ink); }
+  .auth-switch{ text-align:center; font-size:12.5px; color:var(--ink-soft); }
+  .auth-switch b{ color:var(--blue); font-weight:700; cursor:pointer; }
+  .auth-guest{ display:block; text-align:center; margin-top:16px; font-size:12px; color:#9AA9BE; font-weight:600; text-decoration:underline; cursor:pointer; }
+
+  /* ================================================================
+     WEB SHELL (Admin / Animateur) — responsive via container queries
+  ================================================================= */
+  .device-frame{ margin:0 auto; container-type: inline-size; }
+  .w-desktop{ width:1180px; max-width:100%; }
+  .w-tablet{ width:834px; max-width:100%; }
+  .w-mobile{ width:390px; max-width:100%; }
+
+  .web-shell{
+    display:flex; height:720px; border-radius:18px; overflow:hidden; min-height:0;
+    box-shadow:0 30px 60px -25px rgba(15,44,99,.35), 0 4px 14px rgba(15,44,99,.12);
+    border:1px solid var(--line); background:var(--card);
+  }
+  .web-sidebar{
+    width:236px; flex:0 0 auto; background:var(--blue-deep); color:#fff;
+    display:flex; flex-direction:column; padding:20px 14px;
+  }
+  .web-sidebar .wlogo{ font-family:'Fraunces'; font-style:italic; font-weight:600; font-size:19px; padding:6px 10px 22px; }
+  .web-sidebar .wlogo b{ font-style:normal; color:var(--orange-light); }
+  .web-nav-item{
+    display:flex; align-items:center; gap:12px; padding:11px 12px; border-radius:10px;
+    color:rgba(255,255,255,.68); font-size:13px; font-weight:600; cursor:pointer; margin-bottom:2px;
+  }
+  .web-nav-item svg{ width:18px; height:18px; flex:0 0 auto; }
+  .web-nav-item.active{ background:rgba(255,255,255,.12); color:#fff; }
+  .web-nav-item .lbl{ white-space:nowrap; overflow:hidden; }
+  .web-sidebar .side-foot{ margin-top:auto; display:flex; align-items:center; gap:10px; padding:12px 10px; border-top:1px solid rgba(255,255,255,.12); }
+  .side-foot .savt{ width:32px; height:32px; border-radius:50%; background:var(--orange); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:700; flex:0 0 auto; }
+  .side-foot .sname{ font-size:12px; font-weight:700; }
+  .side-foot .srole{ font-size:10.5px; color:rgba(255,255,255,.55); }
+
+  .web-main{ flex:1; display:flex; flex-direction:column; min-width:0; min-height:0; }
+  .web-topbar{ height:62px; flex:0 0 auto; border-bottom:1px solid var(--line); display:flex; align-items:center; justify-content:space-between; padding:0 24px; background:#fff; }
+  .web-topbar .wtitle{ font-family:'Fraunces'; font-weight:600; font-size:18px; }
+  .web-topbar .wactions{ display:flex; align-items:center; gap:12px; }
+  .hamb{ display:none; width:34px; height:34px; border-radius:9px; border:1px solid var(--line); align-items:center; justify-content:center; background:#fff; }
+  .web-content{ flex:1; overflow-y:auto; padding:22px 26px 30px; background:var(--bg); min-height:0; }
+  .wpanel{ display:none; }
+  .wpanel.active{ display:block; }
+
+  /* shared web components */
+  .stat-grid{ display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:20px; }
+  .wstat{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:16px 18px; }
+  .wstat .wnum{ font-family:'Fraunces'; font-size:24px; font-weight:600; color:var(--blue); }
+  .wstat .wlab{ font-size:11.5px; color:var(--ink-soft); margin-top:4px; font-weight:600; }
+  .wstat .wtrend{ font-size:10.5px; color:var(--orange); font-weight:700; margin-top:6px; }
+
+  .wcard{ background:#fff; border:1px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:18px; }
+  .wcard h3{ font-size:14px; font-weight:700; color:var(--ink); margin-bottom:14px; font-family:'Inter'; }
+  .wgrid2{ display:grid; grid-template-columns:1.3fr 1fr; gap:16px; align-items:start; }
+
+  table.wtable{ width:100%; border-collapse:collapse; font-size:12.8px; }
+  table.wtable th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); padding:10px 12px; border-bottom:1px solid var(--line); }
+  table.wtable td{ padding:12px; border-bottom:1px solid var(--line); color:var(--ink); }
+  table.wtable tr:last-child td{ border-bottom:none; }
+  .chip{ display:inline-flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+  .chip.on{ background:#E6F4EA; color:#1E8E3E; }
+  .chip.off{ background:#F1F3F6; color:#8A94A6; }
+  .chip.warn{ background:#FDECE3; color:var(--orange); }
+  .wbtn{ border:none; border-radius:10px; padding:9px 15px; font-weight:700; font-size:12px; cursor:pointer; }
+  .wbtn.primary{ background:var(--blue); color:#fff; }
+  .wbtn.orange{ background:var(--orange); color:#fff; }
+  .wbtn.ghost{ background:#fff; border:1px solid var(--line); color:var(--ink); }
+  .row-actions{ display:flex; gap:6px; }
+  .row-actions button{ width:28px; height:28px; border-radius:8px; border:1px solid var(--line); background:#fff; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); }
+  .row-actions svg{ width:14px; height:14px; }
+
+  .bars{ display:flex; gap:10px; height:140px; padding-top:10px; }
+  .bars .bar{ flex:1; background:linear-gradient(180deg,var(--blue-mid),var(--blue)); border-radius:6px 6px 0 0; position:relative; }
+  .bars .bar span{ position:absolute; top:-18px; left:0; right:0; text-align:center; font-size:10px; font-weight:700; color:var(--ink-soft); }
+  .bars .bl{ text-align:center; font-size:10px; color:var(--ink-soft); margin-top:6px; }
+  .bar-col{ flex:1; height:100%; display:flex; flex-direction:column; justify-content:flex-end; }
+
+  .live-mini{ background:linear-gradient(150deg,var(--blue-deep),var(--blue)); border-radius:12px; padding:16px; color:#fff; }
+  .live-mini .lm-top{ display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+  .live-mini .lm-badge{ display:flex; align-items:center; gap:6px; font-size:11px; font-weight:700; background:rgba(255,255,255,.15); padding:4px 10px; border-radius:20px; }
+  .live-mini h4{ font-family:'Fraunces'; font-size:16px; font-weight:600; margin-bottom:4px; }
+  .live-mini p{ font-size:11.5px; color:rgba(255,255,255,.7); }
+  .live-mini .lm-actions{ display:flex; gap:8px; margin-top:14px; }
+  .live-mini .lm-actions button{ flex:1; border:none; border-radius:9px; padding:9px; font-weight:700; font-size:11.5px; }
+
+  .field-inline{ margin-bottom:14px; }
+  .field-inline label{ display:block; font-size:11.5px; font-weight:700; color:var(--blue); margin-bottom:6px; }
+  .field-inline input, .field-inline select, .field-inline textarea{ width:100%; padding:10px 13px; border-radius:10px; border:1px solid var(--line); font-family:'Inter'; font-size:12.8px; color:var(--ink); background:#fff; }
+  .form-grid2{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+
+  .participant-row{ display:flex; align-items:center; gap:10px; padding:10px; border:1px solid var(--line); border-radius:12px; margin-bottom:8px; }
+  .participant-row .pav{ width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--blue),var(--blue-mid)); display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:700; flex:0 0 auto; }
+  .participant-row .pname{ font-size:12.5px; font-weight:700; flex:1; }
+  .participant-row .ctrl{ display:flex; gap:6px; }
+  .participant-row .ctrl button{ width:30px; height:30px; border-radius:8px; border:1px solid var(--line); background:#fff; display:flex; align-items:center; justify-content:center; }
+  .participant-row .ctrl button.muted{ background:#FDECE3; border-color:var(--orange); color:var(--orange); }
+  .participant-row .ctrl svg{ width:15px; height:15px; }
+
+  .tab-strip{ display:flex; gap:4px; background:#EEF1F6; border-radius:10px; padding:4px; margin-bottom:14px; }
+  .tab-strip button{ flex:1; border:none; background:none; padding:8px; border-radius:8px; font-size:11.5px; font-weight:700; color:var(--ink-soft); }
+  .tab-strip button.active{ background:#fff; color:var(--blue); box-shadow:0 1px 3px rgba(0,0,0,.08); }
+
+  .studio-video{ background:#0B1526; border-radius:14px; height:280px; position:relative; display:flex; align-items:center; justify-content:center; color:rgba(255,255,255,.4); overflow:hidden; }
+  .studio-video .rec-badge{ position:absolute; top:14px; left:14px; display:flex; align-items:center; gap:6px; background:rgba(0,0,0,.5); color:#fff; padding:5px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+  .studio-video .rec-dot{ width:7px; height:7px; border-radius:50%; background:#FF4E4E; }
+  .studio-controls{ display:flex; gap:10px; margin-top:14px; }
+  .studio-controls button{ flex:1; border:none; border-radius:12px; padding:13px; font-weight:700; font-size:12.5px; display:flex; align-items:center; justify-content:center; gap:8px; }
+  .sc-start{ background:var(--orange); color:#fff; }
+  .sc-toggle{ background:#fff; border:1px solid var(--line) !important; color:var(--ink); }
+  .sc-toggle.off{ background:#FDECE3; border-color:var(--orange) !important; color:var(--orange); }
+
+  /* ---- container queries: collapse sidebar to icons on tablet width ---- */
+  @container (max-width: 940px){
+    .web-sidebar{ width:76px; padding:20px 10px; }
+    .web-sidebar .wlogo{ text-align:center; padding:6px 0 22px; font-size:0; }
+    .web-sidebar .wlogo::after{ content:'I24H'; font-size:15px; }
+    .web-nav-item{ justify-content:center; padding:12px 8px; }
+    .web-nav-item .lbl{ display:none; }
+    .side-foot{ justify-content:center; }
+    .side-foot .sname, .side-foot .srole{ display:none; }
+    .stat-grid{ grid-template-columns:repeat(2,1fr); }
+    .wgrid2{ grid-template-columns:1fr; }
+    .form-grid2{ grid-template-columns:1fr; }
+  }
+  /* ---- container queries: mobile web = bottom tab bar ---- */
+  @container (max-width: 620px){
+    .web-shell{ flex-direction:column; height:760px; }
+    .web-sidebar{ display:none; }
+    .web-bottombar{ display:flex !important; }
+    .hamb{ display:flex; }
+    .web-topbar{ padding:0 16px; }
+    .stat-grid{ grid-template-columns:repeat(2,1fr); }
+    .web-content{ padding:16px; }
+  }
+  .web-bottombar{
+    display:none; flex:0 0 auto; background:#fff; border-top:1px solid var(--line);
+    justify-content:space-around; align-items:center; padding:8px 4px;
+  }
+  .web-bottombar button{ background:none; border:none; display:flex; flex-direction:column; align-items:center; gap:3px; color:#9AA9BE; font-size:9.5px; font-weight:700; padding:4px 6px; }
+  .web-bottombar button.active{ color:var(--blue); }
+  .web-bottombar svg{ width:18px; height:18px; }
+
+  @media (max-width:1240px){ .stage{ padding:0 6px; } }
+
+/* I24H V2.6 — unified icon system: no third-party/icon-native colors */
+:root{--i24h-icon:var(--blue);--i24h-icon-soft:#6d82a4;--i24h-icon-accent:var(--orange);}
+svg:not(.deco):not(.ob-art){color:var(--i24h-icon);}
+.menu-item svg,.icon-btn svg,.nav-item svg,.platform-btn svg,.v22-quick svg,.v23-reaction svg,.v23-live-controls svg,.v25-intention svg{color:inherit!important;}
+.i24h-icon{display:inline-flex;align-items:center;justify-content:center;color:var(--i24h-icon);width:18px;height:18px;flex:0 0 auto;}
+.i24h-icon svg{width:100%;height:100%;stroke:currentColor;fill:none;}
+.i24h-icon.fill svg{fill:currentColor;stroke:none;}
+.reactions .i24h-icon,.v22-quick .i24h-icon,.v23-reaction .i24h-icon{color:var(--i24h-icon-accent);}
+.bottom-nav .nav-item{color:var(--i24h-icon-soft);}
+.bottom-nav .nav-item.active{color:var(--i24h-icon);}
+.dot-badge,.pulse-dot,.v25-notif .v25-dot{background:var(--i24h-icon-accent)!important;}
+.v25-intention .heart{font-size:0;color:var(--i24h-icon-accent);}
+.v25-intention .heart::before{content:'♡';font-size:20px;font-weight:700;}
+
+</style>
+<style id="i24h-v2">
+/* ================= I24H V2 — visual system ================= */
+:root{--navy:#102B57;--navy-2:#173D78;--gold:#E9893B;--gold-2:#F3B56D;--cream:#FBF8F2;--muted:#697386;--success:#2E9B68;--danger:#D95656;--shadow:0 18px 50px rgba(16,43,87,.12)}
+body{background:linear-gradient(135deg,#eef2f7 0%,#e7edf6 100%)}
+.switcher-bar{backdrop-filter:blur(14px);box-shadow:0 8px 30px rgba(8,26,55,.18);padding:12px 16px}
+.platform-view{padding:28px 16px 30px}
+.section-label{color:var(--navy);margin-bottom:14px}
+.phone{box-shadow:0 35px 80px -28px rgba(10,29,57,.55),0 14px 30px -10px rgba(10,29,57,.22)}
+.screen{background:#f8f9fc}
+.app-header{padding-left:20px!important;padding-right:20px!important}
+.logo{letter-spacing:-.04em}
+.logo b{color:var(--gold)!important}
+.content{animation:v2fade .28s ease both}
+@keyframes v2fade{from{opacity:.65;transform:translateY(5px)}to{opacity:1;transform:none}}
+.player{border-radius:22px!important;box-shadow:0 14px 34px rgba(15,44,99,.18)!important;overflow:hidden}
+.player:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(8,24,50,0) 50%,rgba(8,24,50,.35));pointer-events:none}
+.live-badge{z-index:3;box-shadow:0 8px 18px rgba(0,0,0,.18)}
+.viewers{z-index:3}
+.emission-title{font-size:22px!important;letter-spacing:-.02em;margin-top:14px!important}
+.animator-row{color:var(--muted)!important}
+.reactions{gap:9px!important}
+.reactions button{width:42px!important;height:38px!important;border:1px solid #e7eaf0!important;background:#fff!important;box-shadow:0 5px 15px rgba(20,40,70,.06);transition:.18s}
+.reactions button:hover{transform:translateY(-2px);border-color:#f0c39b!important}
+.chat-card,.wcard,.wstat{border:1px solid rgba(21,47,87,.08)!important;box-shadow:0 10px 28px rgba(18,43,78,.055)!important}
+.chat-card{border-radius:18px!important}
+.chat-input{border-radius:13px!important;background:#f4f6fa!important;border:1px solid #e5e9f0!important}
+.donate-cta{border-radius:15px!important;background:linear-gradient(135deg,var(--gold),#d96c28)!important;box-shadow:0 10px 22px rgba(232,117,44,.25)!important;font-weight:800}
+.page-title{font-size:28px!important;margin-bottom:18px!important}
+.day-tabs button{border-radius:18px!important}
+.slot{border-radius:17px!important;border:1px solid #e5e9f0!important;box-shadow:0 8px 20px rgba(18,43,78,.045)}
+.replay-card{border:1px solid #e5e9f0!important;border-radius:17px!important;overflow:hidden;box-shadow:0 8px 20px rgba(18,43,78,.05)}
+.replay-card .thumb{background:#dfe6f1}
+.stat-card{border-radius:16px!important;border:1px solid #e5e9f0!important;box-shadow:none!important}
+/* illustration cards */
+.v2-illustration{position:relative;overflow:hidden;border-radius:20px;padding:18px;margin-bottom:14px;background:linear-gradient(135deg,#102b57,#1b4788);color:#fff;min-height:122px}
+.v2-illustration svg{position:absolute;right:8px;bottom:-8px;width:145px;height:145px;opacity:.96}
+.v2-illustration .eyebrow{font-size:10px;text-transform:uppercase;letter-spacing:.14em;font-weight:800;opacity:.7;margin-bottom:7px}
+.v2-illustration h3{font-size:21px;line-height:1.05;max-width:190px;margin-bottom:7px}
+.v2-illustration p{font-size:11px;line-height:1.45;max-width:205px;color:rgba(255,255,255,.78)}
+.v2-live-card{display:flex;align-items:center;gap:10px;margin:12px 0;padding:12px 13px;border-radius:15px;background:#fff;border:1px solid #e6eaf0;box-shadow:0 8px 20px rgba(18,43,78,.05)}
+.v2-live-dot{width:9px;height:9px;border-radius:50%;background:#dc5b5b;box-shadow:0 0 0 5px rgba(220,91,91,.11);animation:pulsev2 1.8s infinite}
+@keyframes pulsev2{50%{box-shadow:0 0 0 9px rgba(220,91,91,0)}}
+.v2-live-card b{font-size:12px}.v2-live-card span{font-size:11px;color:var(--muted)}
+/* web */
+.device-frame{box-shadow:0 28px 70px -24px rgba(11,31,60,.38)!important;border:1px solid #dbe2ed!important}
+.web-sidebar{background:linear-gradient(180deg,#0d2852,#112f61)!important}
+.web-nav-item.active{box-shadow:inset 3px 0 var(--gold),0 6px 18px rgba(0,0,0,.08)!important}
+.web-topbar{border-bottom:1px solid #e3e8f0!important;background:rgba(255,255,255,.94)!important;backdrop-filter:blur(12px)}
+.wtitle{font-weight:800!important;letter-spacing:-.02em}
+.stat-grid{gap:14px!important}
+.wstat{border-radius:18px!important;padding:18px!important}
+.wnum{letter-spacing:-.035em!important}
+.wgrid2{gap:14px!important}
+.wcard{border-radius:18px!important}
+.wcard h3{font-size:17px!important}
+.wtable tr:first-child{background:#f7f9fc}
+.wtable th{font-size:10px!important;letter-spacing:.05em;text-transform:uppercase;color:#7a8494!important}
+.wtable td{font-size:12px!important}
+.chip{border-radius:20px!important}
+.wbtn{border-radius:11px!important;font-weight:800!important}
+.live-mini{border-radius:17px!important;background:linear-gradient(135deg,#102b57,#1b4788)!important;box-shadow:0 12px 24px rgba(16,43,87,.2)}
+.live-mini .lm-badge{letter-spacing:.05em}
+.studio-video{border-radius:17px!important;overflow:hidden!important;box-shadow:0 12px 28px rgba(10,28,55,.16)}
+.studio-controls button{border-radius:11px!important}
+.tab-strip{background:#f5f7fa!important;border:1px solid #e5e9f0!important;border-radius:12px!important;padding:4px!important}
+.tab-strip button{border-radius:9px!important}
+.web-bottombar{box-shadow:0 -8px 25px rgba(12,35,67,.08)!important}
+@media(max-width:800px){.device-frame.w-desktop{width:min(100%,980px)!important}.stat-grid{grid-template-columns:repeat(2,1fr)!important}.wgrid2{grid-template-columns:1fr!important}.v2-illustration svg{width:125px;height:125px}}
+</style>
+
+
+<style id="i24h-v21-style">
+/* ===== I24H V2.1 — product polish ===== */
+:root{--navy:#102a56;--cream:#fbf7f1;--gold:#e8a14b;--muted:#697386;--success:#2f9e68}
+.v21-intention{margin-top:16px;padding:16px;border:1px solid #eadfce;border-radius:18px;background:linear-gradient(145deg,#fffaf3,#fff);box-shadow:0 10px 25px rgba(30,50,80,.06)}
+.v21-intention .head{display:flex;align-items:center;justify-content:space-between;gap:10px}.v21-intention h4{font-family:Fraunces,serif;font-size:19px;color:var(--navy)}
+.v21-intention p{font-size:11.5px;line-height:1.55;color:var(--muted);margin:5px 0 12px}.v21-intention .pill{font-size:10px;font-weight:800;padding:5px 8px;border-radius:99px;background:#f8ead8;color:#9a5a1d}
+.v21-intention button{width:100%;border:0;border-radius:12px;padding:11px;background:var(--navy);color:#fff;font-weight:800;font-size:12px}
+.v21-mini-list{display:flex;gap:7px;margin:0 0 12px}.v21-mini-list span{flex:1;text-align:center;padding:8px 4px;background:#f6f7fa;border-radius:10px;font-size:10px;color:#596477}.v21-mini-list b{display:block;color:var(--navy);font-size:13px;margin-bottom:2px}
+.v21-modal{position:fixed;inset:0;background:rgba(7,20,43,.62);backdrop-filter:blur(5px);z-index:9999;display:none;align-items:flex-end;justify-content:center;padding:14px}.v21-modal.open{display:flex}
+.v21-sheet{width:min(520px,100%);background:#fff;border-radius:24px;padding:20px;box-shadow:0 30px 70px rgba(0,0,0,.25);animation:v21up .22s ease}.v21-sheet h3{font-size:22px;color:var(--navy);margin-bottom:5px}.v21-sheet .sub{font-size:11.5px;color:var(--muted);margin-bottom:16px}
+.v21-check{display:flex;align-items:center;gap:11px;padding:12px 0;border-bottom:1px solid #edf0f4;font-size:12px}.v21-check input{width:18px;height:18px;accent-color:var(--success)}.v21-sheet .close{margin-top:16px;width:100%;padding:12px;border:0;border-radius:12px;background:var(--navy);color:#fff;font-weight:800}
+.v21-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:12px}.v21-kpi div{padding:12px;border:1px solid #e8ebf1;border-radius:13px;background:#fff}.v21-kpi b{display:block;font-size:18px;color:var(--navy)}.v21-kpi span{font-size:9.5px;color:var(--muted)}
+.v21-livebar{display:flex;align-items:center;gap:9px;padding:10px 12px;border-radius:12px;background:#edf8f2;color:#236b49;font-size:10.5px;font-weight:700;margin-top:10px}.v21-livebar .pulse{width:7px;height:7px;border-radius:50%;background:#38a169;box-shadow:0 0 0 5px rgba(56,161,105,.12)}
+.v21-studio-top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}.v21-timer{font-family:Inter,sans-serif;font-weight:800;color:#fff;background:#111b2d;border-radius:10px;padding:7px 10px;font-size:12px}.v21-ready{font-size:10px;color:#2f9e68;font-weight:800}
+@keyframes v21up{from{transform:translateY(18px);opacity:0}to{transform:translateY(0);opacity:1}}
+@media(max-width:520px){.v21-kpi{grid-template-columns:1fr 1fr}.v21-kpi div:last-child{grid-column:1/-1}}
+</style>
+
+<style id="v22-styles">
+.v22-live-meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:12px 0}.v22-live-meta .metric{background:#fff;border:1px solid #e7ebf1;border-radius:13px;padding:10px}.v22-live-meta b{display:block;color:var(--navy);font-size:15px}.v22-live-meta span{font-size:9px;color:var(--muted)}
+.v22-action-row{display:grid;grid-template-columns:1.2fr .8fr;gap:8px;margin-top:10px}.v22-action{border:0;border-radius:13px;padding:12px;font-weight:800;font-size:11px;cursor:pointer}.v22-action.primary{background:var(--navy);color:#fff}.v22-action.soft{background:#f5f7fa;color:var(--navy);border:1px solid #e5e9ef}
+.v22-next{display:flex;align-items:center;gap:10px;padding:11px 13px;border-radius:14px;background:linear-gradient(135deg,#f8fbff,#fff);border:1px solid #e5eaf2;margin-top:12px}.v22-next .icon{width:34px;height:34px;border-radius:10px;background:#eef4ff;display:grid;place-items:center;color:var(--navy);font-weight:900}.v22-next b{font-size:11px;color:var(--navy)}.v22-next span{display:block;font-size:9.5px;color:var(--muted);margin-top:2px}
+.v22-studio-health{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:12px 0}.v22-health{padding:9px;border-radius:11px;background:#f7faf8;border:1px solid #dfeee6;font-size:9px;color:#47735d}.v22-health b{display:block;color:#267a52;font-size:11px;margin-bottom:2px}
+.v22-quick{display:flex;gap:7px;overflow:visible;flex-wrap:wrap;padding:2px 0 4px}.v22-quick button{white-space:nowrap;border:1px solid #e3e8ef;background:#fff;border-radius:999px;padding:8px 10px;font-size:10px;font-weight:700;color:#526077;cursor:pointer}.v22-quick button.active{background:#eef4ff;color:var(--navy);border-color:#cfdbef}
+.v22-toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,20px);background:#102b57;color:#fff;padding:11px 16px;border-radius:999px;font-size:11px;font-weight:700;opacity:0;pointer-events:none;transition:.25s;z-index:999}.v22-toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:600px){.v22-live-meta{gap:6px}.v22-live-meta .metric{padding:8px}.v22-action-row{grid-template-columns:1fr 1fr}}
+</style>
+
+<style>
+.v24-admin{display:grid;grid-template-columns:1.15fr .85fr;gap:14px;margin-bottom:14px}.v24-card{background:#fff;border:1px solid #eee7dc;border-radius:18px;padding:16px;box-shadow:0 8px 24px rgba(25,35,55,.05)}.v24-card h3{margin:0 0 12px;font-size:14px}.v24-live{background:linear-gradient(135deg,#17284d,#263e70);color:#fff;border-radius:20px;padding:18px;min-height:190px;display:flex;flex-direction:column;justify-content:space-between}.v24-live-top{display:flex;justify-content:space-between;align-items:center}.v24-badge{font-size:10px;font-weight:800;letter-spacing:.08em;background:#e95f48;color:#fff;padding:6px 9px;border-radius:999px}.v24-progress{height:7px;background:rgba(255,255,255,.16);border-radius:99px;overflow:hidden;margin-top:12px}.v24-progress i{display:block;width:72%;height:100%;background:var(--gold);border-radius:99px}.v24-health-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.v24-health{padding:12px;border-radius:14px;background:#faf7f1;border:1px solid #eee5d7}.v24-health b{display:block;font-size:12px}.v24-health span{font-size:10px;color:#6f7785}.v24-timeline{position:relative;padding-left:20px}.v24-timeline:before{content:'';position:absolute;left:5px;top:4px;bottom:4px;width:2px;background:#eee5d7}.v24-slot{position:relative;padding:8px 0 14px}.v24-slot:before{content:'';position:absolute;left:-18px;top:11px;width:8px;height:8px;border-radius:50%;background:var(--gold);border:3px solid #fff;box-shadow:0 0 0 1px #ddd}.v24-slot strong{font-size:12px}.v24-slot small{display:block;color:#7c8290;margin-top:3px}.v24-don-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.v24-metric{padding:14px;border-radius:15px;background:#faf7f1}.v24-metric b{display:block;font:700 21px Fraunces,serif;color:var(--navy)}.v24-metric span{font-size:10px;color:#737985}.v24-method{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid #eee}.v24-method:last-child{border-bottom:0}.v24-bar{height:7px;background:#eee8df;border-radius:99px;overflow:hidden;flex:1;margin:0 10px}.v24-bar i{display:block;height:100%;background:var(--gold)}
+@media(max-width:800px){.v24-admin{grid-template-columns:1fr}.v24-don-grid{grid-template-columns:repeat(2,1fr)}.v24-health-grid{grid-template-columns:1fr}}
+</style>
+
+<style id="v25-styles">
+.v25-wrap{margin-top:14px;display:grid;gap:12px}
+.v25-grid{display:grid;grid-template-columns:1.5fr 1fr;gap:12px}
+.v25-card{background:#fff;border:1px solid #e5e9ef;border-radius:18px;padding:16px;box-shadow:0 8px 25px rgba(15,44,99,.06)}
+.v25-card h3{margin:0 0 4px;color:#102d56;font-size:15px}.v25-sub{font-size:10px;color:#7b8797}
+.v25-schedule{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:12px}
+.v25-day{border:1px solid #e7ebf1;border-radius:12px;padding:8px;min-height:112px;background:#fbfcfd}.v25-day strong{font-size:10px;color:#102d56}.v25-date{font-size:9px;color:#8a95a4;margin-bottom:8px}
+.v25-slot{padding:7px 6px;border-radius:9px;background:#eef3fb;margin-top:5px;font-size:8px}.v25-slot.live{background:#e8f7ef}.v25-slot.warn{background:#fff4df}.v25-slot b{display:block;font-size:8px}
+.v25-person{display:flex;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid #eef1f5}.v25-avatar{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:#e8edf7;color:#102d56;font-weight:800;font-size:10px}.v25-person .meta{flex:1}.v25-person b{font-size:11px;color:#18283d;display:block}.v25-person span{font-size:9px;color:#8590a0}.v25-status{font-size:8px;padding:4px 7px;border-radius:20px;background:#e8f7ef;color:#21734a}.v25-status.off{background:#f0f2f5;color:#758091}
+.v25-intention{display:flex;gap:10px;align-items:flex-start;padding:11px 0;border-bottom:1px solid #edf0f4}.v25-intention .heart{font-size:18px}.v25-intention b{font-size:10px;color:#18283d}.v25-intention p{font-size:9px;color:#657184;margin:3px 0}.v25-actions{display:flex;gap:6px;margin-top:6px}.v25-btn{border:1px solid #dfe5ed;background:#fff;border-radius:8px;padding:5px 8px;font-size:8px;cursor:pointer}.v25-btn.primary{background:#102d56;color:#fff;border-color:#102d56}
+.v25-notif{display:flex;gap:10px;align-items:center;padding:11px 0;border-bottom:1px solid #edf0f4}.v25-dot{width:8px;height:8px;border-radius:50%;background:#e4a33a}.v25-notif .meta{flex:1}.v25-notif b{display:block;font-size:10px}.v25-notif span{font-size:8px;color:#7d8998}
+.v25-progress{height:7px;background:#edf1f5;border-radius:20px;overflow:hidden;margin:9px 0}.v25-progress i{display:block;height:100%;width:82%;background:#102d56;border-radius:20px}
+.v25-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.v25-kpi{background:#f8fafc;border:1px solid #e7ebf1;border-radius:12px;padding:10px}.v25-kpi b{display:block;font-size:15px;color:#102d56}.v25-kpi span{font-size:8px;color:#7e8997}
+.v25-chip{display:inline-flex;align-items:center;padding:4px 7px;border-radius:20px;background:#f1f4f8;color:#536174;font-size:8px;margin:3px}
+@media(max-width:900px){.v25-grid{grid-template-columns:1fr}.v25-schedule{overflow:visible;grid-template-columns:repeat(2,minmax(0,1fr))}.v25-kpis{grid-template-columns:1fr 1fr}}
+</style>
+
+
+<style id="i24h-v28-responsive">
+/* V2.8 — mobile-first correction: no horizontal page scrolling */
+html,body{width:100%;max-width:100%;overflow-x:hidden}
+body{padding-bottom:24px}
+.platform-view{width:100%;max-width:100%;overflow-x:hidden;padding-left:12px;padding-right:12px}
+.phone-wrap,.device-frame,.web-shell,.web-main,.web-content{max-width:100%;min-width:0}
+.phone{width:min(375px, calc(100vw - 24px));height:min(812px, calc((100vw - 24px) * 2.1653));padding:10px;border-radius:42px}
+.screen{border-radius:31px}
+.notch{top:10px;width:104px;height:22px}
+.content{min-width:0}
+.ob-slide{padding:0 24px}
+.ob-art{width:148px;height:148px;margin-bottom:24px}
+.ob-title{font-size:22px}
+.ob-sub{max-width:260px}
+.v22-quick,.v23-reaction-bar{overflow:visible;flex-wrap:wrap}
+.v22-quick button,.v23-reaction{white-space:normal;flex:1 1 auto}
+.v25-schedule{overflow:visible;grid-template-columns:repeat(7,minmax(0,1fr))}
+.v25-day{min-width:0;padding:7px 5px}
+@media(max-width:800px){
+  .switcher-bar{justify-content:flex-start;overflow:hidden;padding:10px 10px}
+  .switcher-bar .brand{width:100%;margin:0 0 2px;font-size:16px}
+  .platform-btn{font-size:11px;padding:8px 10px;min-width:0;flex:1}
+  .device-toggle{flex-wrap:wrap}
+  .web-shell{height:auto;min-height:650px}
+  .web-sidebar{width:62px;padding:14px 7px}
+  .web-sidebar .wlogo,.web-nav-item .lbl,.side-foot .sname,.side-foot .srole{display:none}
+  .web-nav-item{justify-content:center;padding:11px 6px}
+  .web-topbar{padding:0 12px}
+  .web-content{padding:14px 12px 22px}
+  .stat-grid{grid-template-columns:1fr 1fr!important}
+  .v25-schedule{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .v25-day{min-height:105px}
+}
+@media(max-width:430px){
+  .phone{width:calc(100vw - 16px);height:calc((100vw - 16px) * 2.1653);padding:8px;border-radius:34px}
+  .screen{border-radius:26px}
+  .statusbar{height:38px;padding:0 18px;font-size:12px}
+  .app-header{padding:5px 15px 10px}
+  .content{padding:0 14px 12px}
+  .bottom-nav{padding:8px 5px 18px}
+  .nav-item{padding:4px 5px;font-size:9.5px}
+  .nav-item svg{width:20px;height:20px}
+  .ob-art{width:128px;height:128px;margin-bottom:18px}
+  .ob-title{font-size:20px}
+  .ob-sub{font-size:12px}
+  .ob-bottom{padding:12px 18px 24px}
+  .ob-dots{margin-bottom:14px}
+  .ob-next{padding:12px}
+  .v25-schedule{grid-template-columns:1fr 1fr}
+}
+</style>
 </head>
 <body>
-<div id="loading" style="font-family:system-ui;padding:40px;text-align:center">Chargement de la maquette I24H…</div>
+
+<div class="switcher-bar">
+  <span class="brand">I<b>24H</b> — Maquette</span>
+  <button class="platform-btn active" data-target="view-mobile">📱 Application mobile</button>
+  <button class="platform-btn" data-target="view-admin">🖥️ Web — Administrateur</button>
+  <button class="platform-btn" data-target="view-animateur"><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M12 14a4 4 0 0 0 4-4V6a4 4 0 1 0-8 0v4a4 4 0 0 0 4 4Z"/><path d="M19 10a7 7 0 0 1-14 0M12 17v4M8 21h8"/></svg></span> Web — Animateur</button>
+</div>
+
+<!-- =========================================================
+     MOBILE APP VIEW
+========================================================= -->
+<div class="platform-view active" id="view-mobile">
+  <div class="section-label">Application mobile — Fidèles</div>
+  <div class="phone-wrap">
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="screen">
+
+        <div class="onboarding" id="onboarding">
+          <div class="ob-track" id="obTrack">
+            <div class="ob-slide" data-i="0">
+              <svg class="ob-art" viewBox="0 0 220 220" aria-hidden="true">
+  <circle cx="110" cy="110" r="78" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.24)" stroke-width="2"/>
+  <circle cx="110" cy="110" r="58" fill="var(--orange)" opacity=".95"/>
+  <path d="M110 72c-18 0-32 14-32 32 0 25 32 48 32 48s32-23 32-48c0-18-14-32-32-32Z" fill="var(--cream)"/>
+  <path d="M110 91v27M97 104h26" stroke="var(--navy)" stroke-width="6" stroke-linecap="round"/>
+  <path d="M48 55l10 18M172 55l-10 18M40 111h20M180 111h-20" stroke="var(--gold-2)" stroke-width="4" stroke-linecap="round"/>
+</svg>
+              <div class="ob-title">Des prières en direct,<br/>24h/24</div>
+              <div class="ob-sub">Suivez une diffusion continue, sans interruption, où que vous soyez.</div>
+            </div>
+            <div class="ob-slide" data-i="1">
+              <svg class="ob-art" viewBox="0 0 220 220" aria-hidden="true">
+  <circle cx="110" cy="110" r="78" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.22)" stroke-width="2"/>
+  <circle cx="110" cy="83" r="20" fill="var(--orange)"/>
+  <path d="M78 145c4-24 17-38 32-38s28 14 32 38" fill="var(--cream)"/>
+  <circle cx="55" cy="106" r="14" fill="var(--gold-2)"/>
+  <path d="M34 154c3-18 12-27 21-27s18 9 21 27" fill="var(--cream)" opacity=".95"/>
+  <circle cx="165" cy="106" r="14" fill="var(--gold-2)"/>
+  <path d="M144 154c3-18 12-27 21-27s18 9 21 27" fill="var(--cream)" opacity=".95"/>
+  <path d="M82 91c-16 3-28 10-37 22M138 91c16 3 28 10 37 22" stroke="var(--gold-2)" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="110" cy="151" r="7" fill="var(--orange)"/>
+</svg>
+              <div class="ob-title">Une communauté unie,<br/>où que vous soyez</div>
+              <div class="ob-sub">Rejoignez des fidèles du monde entier réunis autour d'une même foi.</div>
+            </div>
+            <div class="ob-slide" data-i="2">
+              <svg class="ob-art" viewBox="0 0 220 220" aria-hidden="true">
+  <circle cx="110" cy="110" r="78" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.22)" stroke-width="2"/>
+  <path d="M68 121c12-8 25-8 38 2l18 15c7 6 18 6 25-1l18-18" fill="none" stroke="var(--cream)" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M152 119l-18 17c-7 7-18 7-25 1l-18-15c-13-10-26-10-38-2" fill="none" stroke="var(--gold-2)" stroke-width="7" stroke-linecap="round"/>
+  <path d="M110 82c-12-16-36-8-36 12 0 22 36 42 36 42s36-20 36-42c0-20-24-28-36-12Z" fill="var(--orange)"/>
+  <path d="M110 94v18M101 103h18" stroke="var(--cream)" stroke-width="4" stroke-linecap="round"/>
+</svg>
+              <div class="ob-title">Soutenez par le don</div>
+              <div class="ob-sub">Faites un don en toute sécurité, localement ou depuis l'international.</div>
+            </div>
+            <div class="ob-slide" data-i="3">
+              <svg class="ob-art" viewBox="0 0 220 220" aria-hidden="true">
+  <circle cx="110" cy="110" r="78" fill="rgba(255,255,255,.06)" stroke="rgba(255,255,255,.22)" stroke-width="2"/>
+  <circle cx="110" cy="110" r="55" fill="none" stroke="var(--cream)" stroke-width="9"/>
+  <path d="M110 74v38l25 16" stroke="var(--orange)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M67 61c12-13 27-21 43-24M153 61c-12-13-27-21-43-24" fill="none" stroke="var(--gold-2)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M110 38v12M53 110H41M179 110h-12M67 67l-8-8M153 67l8-8" stroke="var(--gold-2)" stroke-width="4" stroke-linecap="round"/>
+</svg>
+              <div class="ob-title">Un programme sans<br/>interruption</div>
+              <div class="ob-sub">Des animateurs se relaient toute la journée pour un direct continu.</div>
+            </div>
+            <div class="ob-slide" data-i="4">
+              <svg class="ob-art" viewBox="0 0 220 220" aria-hidden="true">
+  <circle cx="110" cy="110" r="82" fill="rgba(255,255,255,.06)"/>
+  <rect x="66" y="45" width="88" height="130" rx="20" fill="var(--cream)"/>
+  <rect x="75" y="58" width="70" height="92" rx="12" fill="var(--navy)"/>
+  <circle cx="110" cy="104" r="23" fill="var(--orange)"/>
+  <path d="M101 99l17 10-17 10Z" fill="var(--cream)"/>
+  <circle cx="110" cy="162" r="5" fill="var(--gold-2)"/>
+  <path d="M49 80c-7 10-10 21-10 31s3 21 10 31M171 80c7 10 10 21 10 31s-3 21-10 31" fill="none" stroke="var(--gold-2)" stroke-width="5" stroke-linecap="round"/>
+</svg>
+              <div class="ob-title">Bienvenue dans I24H</div>
+              <div class="ob-sub">Votre espace de prière, d'enseignement et de communion, à tout moment.</div>
+            </div>
+          </div>
+          <div class="ob-bottom">
+            <div class="ob-dots" id="obDots"></div>
+            <div class="ob-actions">
+              <button class="ob-skip" id="obSkip">Passer</button>
+              <button class="ob-next" id="obNext"><span id="obNextLabel">Suivant</span>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="auth hidden" id="auth">
+          <div class="auth-wave">
+            <div class="logo">I<b>24H</b></div>
+            <svg class="deco" viewBox="0 0 400 40" preserveAspectRatio="none"><path d="M0,20 C60,40 120,0 200,18 C280,36 340,6 400,22 L400,40 L0,40 Z" fill="#F4F6FA"/></svg>
+          </div>
+          <div class="auth-body">
+            <div id="authSignup">
+              <div class="auth-title">Créez votre compte</div>
+              <div class="auth-sub">Rejoignez la communauté I24H pour suivre les directs, envoyer vos intentions et soutenir par le don.</div>
+              <div class="field"><label>Nom complet</label><input type="text" placeholder="Ex : Rufin Ayedoun"></div>
+              <div class="field"><label>Email ou téléphone</label><input type="text" placeholder="vous@email.com"></div>
+              <div class="field"><label>Mot de passe</label><input type="password" placeholder="8 caractères minimum"></div>
+              <div class="field-check"><input type="checkbox" checked><span>J'accepte les <b style="color:var(--blue)">conditions d'utilisation</b> et la politique de confidentialité.</span></div>
+              <button class="auth-cta" id="btnSignup">Créer mon compte</button>
+              <div class="auth-divider">ou</div>
+              <div class="social-row">
+                <button class="social-btn">Google</button>
+                <button class="social-btn">Apple</button>
+              </div>
+              <div class="auth-switch">Déjà un compte ? <b id="goLogin">Se connecter</b></div>
+            </div>
+            <div id="authLogin" style="display:none;">
+              <div class="auth-title">Content de vous revoir</div>
+              <div class="auth-sub">Connectez-vous pour retrouver vos directs, votre programme et vos intentions.</div>
+              <div class="field"><label>Email ou téléphone</label><input type="text" placeholder="vous@email.com"></div>
+              <div class="field"><label>Mot de passe</label><input type="password" placeholder="Votre mot de passe"></div>
+              <div style="text-align:right; margin-bottom:20px;"><span style="font-size:12px; color:var(--blue); font-weight:600;">Mot de passe oublié ?</span></div>
+              <button class="auth-cta" id="btnLogin">Se connecter</button>
+              <div class="auth-switch" style="margin-top:16px;">Pas encore de compte ? <b id="goSignup">S'inscrire</b></div>
+            </div>
+            <span class="auth-guest" id="authGuest">Continuer en tant qu'invité</span>
+          </div>
+        </div>
+
+        <div class="statusbar">
+          <span>9:41</span>
+          <div class="icons">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M2 17h2v3H2zM7 13h2v7H7zM12 9h2v11h-2zM17 5h2v15h-2z"/></svg>
+            <svg width="20" height="14" viewBox="0 0 24 16" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="1" y="1" width="19" height="12" rx="3"/></svg>
+          </div>
+        </div>
+        <div class="app-header">
+          <div class="logo">I<b>24H</b></div>
+          <button class="icon-btn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="dot-badge"></span></button>
+        </div>
+
+        <div class="content" id="page-home">
+<div class="v2-illustration">
+  <div class="eyebrow">I24H · 24/7</div>
+  <h3>Un espace de prière, à toute heure.</h3>
+  <p>Rejoignez le direct, déposez une intention et restez connecté à la communauté.</p>
+  <svg viewBox="0 0 160 160" aria-hidden="true"><circle cx="82" cy="82" r="57" fill="rgba(255,255,255,.08)"/><circle cx="82" cy="82" r="39" fill="rgba(242,181,109,.18)"/><path d="M82 112c-24-15-39-29-39-47 0-12 9-21 21-21 8 0 14 4 18 10 4-6 10-10 18-10 12 0 21 9 21 21 0 18-15 32-39 47Z" fill="#F3B56D"/><circle cx="58" cy="43" r="4" fill="#fff"/><circle cx="117" cy="54" r="3" fill="#fff" opacity=".7"/></svg>
+</div>
+<div class="v2-live-card"><span class="v2-live-dot"></span><div><b>En direct maintenant</b><br><span>Réveil du Matin · 1 284 fidèles connectés</span></div></div>
+<div class="v22-live-meta">
+ <div class="metric"><b>1 284</b><span>fidèles en ligne</span></div>
+ <div class="metric"><b>24/7</b><span>prière continue</span></div>
+ <div class="metric"><b>128</b><span>intentions reçues</span></div>
+</div>
+<div class="v22-quick"><button class="active" type="button"><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M7 11h10M8 8l4-4 4 4M9 12v4m6-4v4M6 20h12"/></svg></span> Amen</button><button type="button"><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.3-9.3-8.4C.8 8.2 3.4 4.5 7 4.5c2.2 0 3.8 1.2 5 3 1.2-1.8 2.8-3 5-3 3.6 0 6.2 3.7 4.3 7.1C19 15.7 12 20 12 20Z"/></svg></span> Je prie avec vous</button><button type="button"><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M12 21c4.5 0 7-2.8 7-6.2 0-3-2.1-5.1-4.3-7.8-.3 2-1.2 3.1-2.2 3.8.1-3.3-1.4-5.8-3.1-7.8.1 4-4.4 6.5-4.4 11.2C5 18.2 7.8 21 12 21Z"/></svg></span> Gloire à Dieu</button></div>
+<div class="v22-action-row"><button class="v22-action primary" type="button" onclick="I24H.openIntentions()">✦ Mon intention</button><button class="v22-action soft" type="button" onclick="I24H.showToast('Programme ajouté aux favoris')">＋ Rappeler</button></div>
+<div class="v22-next"><div class="icon">06</div><div><b>Prochaine émission · Louange &amp; Adoration</b><span>06h00–07h00 · Chadrac T. · dans 28 min</span></div></div>
+<div class="v21-intention">
+  <div class="head"><h4>Déposez votre intention</h4><span class="pill">CONFIDENTIEL</span></div>
+  <p>Une équipe de prière veille sur les intentions reçues pendant les directs.</p>
+  <div class="v21-mini-list"><span><b>128</b>reçues</span><span><b>24/7</b>couverture</span><span><b>100%</b>écoutées</span></div>
+  <button type="button" onclick="I24H.openIntentions()">✦ Déposer une intention</button>
+</div>
+          <div class="player">
+            <iframe class="yt-frame" src="https://www.youtube.com/embed/k28qCBwww0E?rel=0&modestbranding=1" title="Direct I24H" frameborder="0" allowfullscreen></iframe>
+            <div class="live-badge"><span class="pulse-dot"></span>DIRECT</div>
+            <div class="viewers"><svg width="11" height="11" viewBox="0 0 24 24" fill="#fff"><path d="M12 5c-7 0-10 7-10 7s3 7 10 7 10-7 10-7-3-7-10-7zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8z"/></svg>1 284</div>
+            <div class="float-hearts"><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.3-9.3-8.4C.8 8.2 3.4 4.5 7 4.5c2.2 0 3.8 1.2 5 3 1.2-1.8 2.8-3 5-3 3.6 0 6.2 3.7 4.3 7.1C19 15.7 12 20 12 20Z"/></svg></span><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M7 11h10M8 8l4-4 4 4M9 12v4m6-4v4M6 20h12"/></svg></span><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M12 21c4.5 0 7-2.8 7-6.2 0-3-2.1-5.1-4.3-7.8-.3 2-1.2 3.1-2.2 3.8.1-3.3-1.4-5.8-3.1-7.8.1 4-4.4 6.5-4.4 11.2C5 18.2 7.8 21 12 21Z"/></svg></span></div>
+          </div>
+          <div class="emission-title">Réveil du Matin</div>
+          <div class="animator-row"><div class="avatar">EA</div> Animateur Edith A. · 05h00–06h00</div>
+          <div class="reactions"><button><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.3-9.3-8.4C.8 8.2 3.4 4.5 7 4.5c2.2 0 3.8 1.2 5 3 1.2-1.8 2.8-3 5-3 3.6 0 6.2 3.7 4.3 7.1C19 15.7 12 20 12 20Z"/></svg></span></button><button><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M7 11h10M8 8l4-4 4 4M9 12v4m6-4v4M6 20h12"/></svg></span></button><button><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="m8 12 5-7a1.5 1.5 0 0 1 2.5 1.6L14 10h3.5a2 2 0 0 1 2 2.5l-1.4 5A3 3 0 0 1 15.2 20H9a2 2 0 0 1-2-2v-4a2 2 0 0 1 1-2Z"/><path d="M4 11v7"/></svg></span></button><button><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M12 21c4.5 0 7-2.8 7-6.2 0-3-2.1-5.1-4.3-7.8-.3 2-1.2 3.1-2.2 3.8.1-3.3-1.4-5.8-3.1-7.8.1 4-4.4 6.5-4.4 11.2C5 18.2 7.8 21 12 21Z"/></svg></span></button></div>
+          <div class="chat-card">
+            <h4>Chat en direct</h4>
+            <div class="msg"><b>Marie:</b><span>Amen, merci pour ce message</span></div>
+            <div class="msg"><b>Jean:</b><span>Merci Seigneur pour cette journée</span></div>
+            <div class="msg"><b>Ruth:</b><span>Bénédictions à toute l'équipe</span></div>
+            <div class="chat-input">Écrire un message…</div>
+          </div>
+          <button class="donate-cta">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="#fff"><path d="M12 21s-7-4.35-9.5-8.5C.5 8.5 3 5 6.5 5c2 0 3.5 1 5.5 3 2-2 3.5-3 5.5-3C21 5 23.5 8.5 21.5 12.5 19 16.65 12 21 12 21z"/></svg>
+            Faire un don
+          </button>
+        </div>
+
+        <div class="content" id="page-programme" style="display:none;">
+          <div class="page-title">Programme</div>
+          <div class="day-tabs"><button class="active">Aujourd'hui</button><button>Demain</button><button>Semaine</button></div>
+          <div class="slot now"><div class="time">05h–06h</div><div class="info"><div class="name">Réveil du Matin</div><div class="role">Animateur Edith A.</div></div><div class="badge-now">En cours</div></div>
+          <div class="slot"><div class="time">06h–07h</div><div class="info"><div class="name">Louange &amp; Adoration</div><div class="role">Animateur Chadrac T.</div></div></div>
+          <div class="slot"><div class="time">07h–08h</div><div class="info"><div class="name">Parole du Jour</div><div class="role">Animateur Ruth K.</div></div></div>
+          <div class="slot"><div class="time">08h–09h</div><div class="info"><div class="name">Intercession</div><div class="role">Animateur Paul D.</div></div></div>
+        </div>
+
+        <div class="content" id="page-replay" style="display:none;">
+          <div class="page-title">Replay</div>
+          <div class="replay-card"><div class="thumb"><img src="https://img.youtube.com/vi/QM8jQHE5AAk/hqdefault.jpg" alt=""><svg class="playbtn" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><div class="dur">42:10</div></div><div class="replay-info"><div class="t">Réveil du Matin</div><div class="m">Hier · Animateur Edith A.</div></div></div>
+          <div class="replay-card"><div class="thumb"><img src="https://img.youtube.com/vi/QI-Z0lq-LIE/hqdefault.jpg" alt=""><svg class="playbtn" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><div class="dur">58:32</div></div><div class="replay-info"><div class="t">Louange &amp; Adoration</div><div class="m">Hier · Animateur Chadrac T.</div></div></div>
+          <div class="replay-card"><div class="thumb"><img src="https://img.youtube.com/vi/hNyGjjqHLj8/hqdefault.jpg" alt=""><svg class="playbtn" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg><div class="dur">37:05</div></div><div class="replay-info"><div class="t">Parole du Jour</div><div class="m">Lundi · Animateur Ruth K.</div></div></div>
+        </div>
+
+        <div class="content" id="page-don" style="display:none;">
+          <div class="page-title">Faire un don</div>
+          <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:14px;">Choisissez un montant (FCFA)</div>
+          <div class="amount-grid">
+            <button>1 000</button><button class="active">5 000</button><button>10 000</button>
+            <button>25 000</button><button>50 000</button><button>Autre</button>
+          </div>
+          <div style="font-size:12.5px; color:var(--ink-soft); margin-bottom:10px;">Moyen de paiement</div>
+          <div class="pay-method active"><div class="radio"></div><div class="plabel">Fedapay (MoMo, Moov, Orange, Wave)</div></div>
+          <div class="pay-method"><div class="radio"></div><div class="plabel">Stripe (carte bancaire internationale)</div></div>
+          <div class="pay-method"><div class="radio"></div><div class="plabel">PayPal</div></div>
+          <div class="anon-row">Faire un don anonyme <div class="switch"></div></div>
+          <button class="donate-cta">Confirmer le don de 5 000 FCFA</button>
+        </div>
+
+        <div class="content" id="page-profil" style="display:none;">
+          <div class="profile-head"><div class="profile-avatar">RA</div><div class="pname">Rufin Ayedoun</div><div class="pmail">rufin.ayedoun@email.com</div></div>
+          <div class="stat-row">
+            <div class="stat-card"><div class="num">12</div><div class="lab">Dons envoyés</div></div>
+            <div class="stat-card"><div class="num">5</div><div class="lab">Intentions</div></div>
+            <div class="stat-card"><div class="num">30</div><div class="lab">Directs suivis</div></div>
+          </div>
+          <div class="menu-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.5 8.5 3 5 6.5 5c2 0 3.5 1 5.5 3 2-2 3.5-3 5.5-3C21 5 23.5 8.5 21.5 12.5 19 16.65 12 21 12 21z"/></svg>Mes dons <span class="chev">›</span></div>
+          <div class="menu-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Mes intentions de prière <span class="chev">›</span></div>
+          <div class="menu-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>Notifications <span class="chev">›</span></div>
+          <div class="menu-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/></svg>Paramètres <span class="chev">›</span></div>
+        </div>
+
+        <div class="bottom-nav">
+          <button class="nav-item active" data-page="home"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>Direct</button>
+          <button class="nav-item" data-page="programme"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Programme</button>
+          <button class="nav-item" data-page="replay"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg>Replay</button>
+          <button class="nav-item" data-page="don"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 21s-7-4.35-9.5-8.5C.5 8.5 3 5 6.5 5c2 0 3.5 1 5.5 3 2-2 3.5-3 5.5-3C21 5 23.5 8.5 21.5 12.5 19 16.65 12 21 12 21z"/></svg>Don</button>
+          <button class="nav-item" data-page="profil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg>Profil</button>
+        </div>
+      </div>
+    </div>
+    <button class="ob-toggle" id="obToggle">Revoir l'onboarding</button>
+    <button class="ob-toggle" id="authToggle" style="margin-top:10px; background:var(--orange);">Voir l'inscription</button>
+  </div>
+</div>
+
+<!-- =========================================================
+     ADMIN WEB VIEW
+========================================================= -->
+<div class="platform-view" id="view-admin">
+  <div class="section-label">Plateforme Web — Administrateur</div>
+  <div class="device-toggle" data-scope="admin">
+    <button class="device-btn active" data-w="w-desktop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Ordinateur</button>
+    <button class="device-btn" data-w="w-tablet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M10 18h4"/></svg>Tablette</button>
+    <button class="device-btn" data-w="w-mobile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/><path d="M10 18h4"/></svg>Mobile</button>
+  </div>
+
+  <div class="device-frame w-desktop" id="frame-admin">
+    <div class="web-shell">
+      <div class="web-sidebar">
+        <div class="wlogo">I<b>24H</b></div>
+        <div class="web-nav-item active" data-p="a-dashboard"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg><span class="lbl">Tableau de bord</span></div>
+        <div class="web-nav-item" data-p="a-animateurs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c1-4 4-6 6.5-6s5.5 2 6.5 6"/><circle cx="18" cy="8" r="2.6"/><path d="M15.7 14.3c2.3.5 4 2.3 4.8 5.7"/></svg><span class="lbl">Animateurs</span></div>
+        <div class="web-nav-item" data-p="a-utilisateurs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg><span class="lbl">Utilisateurs</span></div>
+        <div class="web-nav-item" data-p="a-planning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="lbl">Planning</span></div>
+        <div class="web-nav-item" data-p="a-emissions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M9 9l6 3-6 3z"/></svg><span class="lbl">Émissions &amp; Replays</span></div>
+        <div class="web-nav-item" data-p="a-dons"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.5 8.5 3 5 6.5 5c2 0 3.5 1 5.5 3 2-2 3.5-3 5.5-3C21 5 23.5 8.5 21.5 12.5 19 16.65 12 21 12 21z"/></svg><span class="lbl">Dons</span></div>
+        <div class="web-nav-item" data-p="a-notifs"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg><span class="lbl">Notifications</span></div>
+        <div class="web-nav-item" data-p="a-params"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.87l.06.06a2 2 0 1 1-2.83 2.83"/></svg><span class="lbl">Paramètres</span></div>
+        <div class="side-foot"><div class="savt">RA</div><div><div class="sname">Rufin Ayedoun</div><div class="srole">Administrateur</div></div></div>
+      </div>
+
+      <div class="web-main">
+        <div class="web-topbar">
+          <button class="hamb"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+          <div class="wtitle" id="a-title">Tableau de bord</div>
+          <div class="wactions">
+            <button class="icon-btn" style="width:34px;height:34px;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/></svg></button>
+            <div class="avatar">RA</div>
+          </div>
+        </div>
+
+        <div class="web-content">
+
+          <!-- DASHBOARD -->
+          <div class="wpanel active" id="a-dashboard">
+<div class="v2-admin-hero" style="display:grid;grid-template-columns:1.5fr .8fr;gap:14px;margin-bottom:14px;">
+  <div class="live-mini" style="min-height:148px;display:flex;flex-direction:column;justify-content:space-between;">
+    <div><span class="lm-badge">● DIRECT ACTIF</span><div style="font-size:24px;font-family:Fraunces,serif;font-weight:700;margin-top:12px;">Réveil du Matin</div><p style="margin-top:5px;color:rgba(255,255,255,.72);font-size:12px;">Edith A. · 05h00–06h00 · 1 284 fidèles</p></div>
+    <div style="display:flex;gap:8px;"><button class="wbtn" style="background:#fff;color:var(--navy);">Ouvrir le studio</button><button class="wbtn" style="background:var(--gold);color:#fff;">Gérer le direct</button></div>
+  </div>
+  <div class="wcard" style="display:flex;flex-direction:column;justify-content:center;background:var(--cream);"><div style="font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:#8b735d;font-weight:800;">Continuité 24/7</div><div style="font:700 38px Fraunces,serif;color:var(--navy);margin:5px 0;">99,8%</div><div style="font-size:11px;color:var(--muted);">couverture planifiée cette semaine</div></div>
+</div>
+            <div class="v21-livebar"><span class="pulse"></span> Continuité 24/7 assurée · prochaine relève dans 13 min</div>
+<div class="v21-kpi"><div><b>1 284</b><span>fidèles en direct</span></div><div><b>99,8%</b><span>couverture planifiée</span></div><div><b>45 000</b><span>FCFA reçus aujourd'hui</span></div></div>
+<div class="stat-grid">
+              <div class="wstat"><div class="wnum">1 284</div><div class="wlab">Fidèles connectés</div><div class="wtrend">▲ 12% vs hier</div></div>
+              <div class="wstat"><div class="wnum">128 000 FCFA</div><div class="wlab">Dons aujourd'hui</div><div class="wtrend">▲ 8%</div></div>
+              <div class="wstat"><div class="wnum">1</div><div class="wlab">Émission en cours</div></div>
+              <div class="wstat"><div class="wnum">12 480</div><div class="wlab">Utilisateurs inscrits</div><div class="wtrend">▲ 3.5%</div></div>
+            </div>
+<div class="v22-studio-health">
+ <div class="v22-health"><b>● Caméra</b>Opérationnelle</div>
+ <div class="v22-health"><b>● Micro</b>Niveau optimal</div>
+ <div class="v22-health"><b>● Réseau</b>Stable · 18 Mbps</div>
+</div>
+<div class="v22-quick" style="margin-bottom:10px"><button class="active" type="button" onclick="I24H.showToast('Scène principale sélectionnée')">Scène principale</button><button type="button" onclick="I24H.showToast('Prière en gros plan activée')">Gros plan</button><button type="button" onclick="I24H.showToast('Bannière LIVE affichée')">Bannière LIVE</button></div>
+<div class="v24-admin"><div class="v24-live"><div class="v24-live-top"><span class="v24-badge">● LIVE · 00:47:18</span><span>1 284 👁</span></div><div><div style="font:700 25px Fraunces,serif">Réveil du Matin</div><div style="font-size:11px;opacity:.72">Edith A. · studio principal · qualité HD</div><div class="v24-progress"><i></i></div><div style="display:flex;justify-content:space-between;font-size:10px;opacity:.65;margin-top:5px"><span>05h00</span><span>06h00</span></div></div><div style="display:flex;gap:8px"><button class="wbtn" style="background:#fff;color:var(--navy)" onclick="I24H.showToast('Ouverture du monitoring')">Monitoring</button><button class="wbtn" style="background:var(--gold);color:#fff" onclick="I24H.showToast('Relève confirmée pour Chadrac T.')">Confirmer la relève</button></div></div><div class="v24-card"><h3>Prochaine relève</h3><div style="font:700 28px Fraunces,serif;color:var(--navy)">13 min</div><div style="font-size:11px;color:#7a808c;margin:3px 0 12px">Chadrac T. · 06h00–07h00</div><div class="v24-timeline"><div class="v24-slot"><strong>05h00 · En cours</strong><small>Réveil du Matin · Edith A.</small></div><div class="v24-slot"><strong>06h00 · À venir</strong><small>Louange &amp; Adoration · Chadrac T.</small></div><div class="v24-slot"><strong>07h00 · À venir</strong><small>Parole du Jour · Ruth K.</small></div></div></div></div>
+            <div class="wgrid2">
+              <div class="wcard">
+                <h3>Dons de la semaine (FCFA)</h3>
+                <div class="bars">
+                  <div class="bar-col"><div class="bar" style="height:60%"><span>62k</span></div><div class="bl">Lun</div></div>
+                  <div class="bar-col"><div class="bar" style="height:75%"><span>78k</span></div><div class="bl">Mar</div></div>
+                  <div class="bar-col"><div class="bar" style="height:50%"><span>51k</span></div><div class="bl">Mer</div></div>
+                  <div class="bar-col"><div class="bar" style="height:90%"><span>94k</span></div><div class="bl">Jeu</div></div>
+                  <div class="bar-col"><div class="bar" style="height:68%"><span>70k</span></div><div class="bl">Ven</div></div>
+                  <div class="bar-col"><div class="bar" style="height:100%; background:linear-gradient(180deg,var(--orange-light),var(--orange));"><span>128k</span></div><div class="bl">Sam</div></div>
+                  <div class="bar-col"><div class="bar" style="height:40%"><span>41k</span></div><div class="bl">Dim</div></div>
+                </div>
+              </div>
+              <div class="wcard">
+                <h3>Émission en cours</h3>
+                <div class="live-mini">
+                  <div class="lm-top"><span class="lm-badge">● DIRECT</span><span style="font-size:11px;">👁 1 284</span></div>
+                  <h4>Réveil du Matin</h4>
+                  <p>Animateur Edith A. · 05h00–06h00</p>
+                  <div class="lm-actions">
+                    <button style="background:rgba(255,255,255,.15); color:#fff;">Voir le direct</button>
+                    <button style="background:var(--orange); color:#fff;">Arrêter</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="wcard">
+              <h3>Activité récente</h3>
+              <table class="wtable">
+                <tr><th>Événement</th><th>Détail</th><th>Heure</th></tr>
+                <tr><td>Nouveau don</td><td>5 000 FCFA — Anonyme</td><td>Il y a 3 min</td></tr>
+                <tr><td>Intention envoyée</td><td>Marie D. — guérison</td><td>Il y a 8 min</td></tr>
+                <tr><td>Nouvel utilisateur</td><td>Jean K. inscrit</td><td>Il y a 21 min</td></tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- ANIMATEURS -->
+          <div class="wpanel" id="a-animateurs">
+            <div style="display:flex; justify-content:flex-end; margin-bottom:14px;"><button class="wbtn primary">+ Ajouter un animateur</button></div>
+            <div class="wcard" style="padding:0;">
+              <table class="wtable" style="margin:0;">
+                <tr><th>Nom</th><th>Statut</th><th>Prochaine émission</th><th>Émissions ce mois</th><th></th></tr>
+                <tr><td>Edith A.</td><td><span class="chip on">En ligne</span></td><td>Aujourd'hui 05h00</td><td>28</td><td class="row-actions"><button>✎</button><button>🗑</button></td></tr>
+                <tr><td>Chadrac T.</td><td><span class="chip off">Hors ligne</span></td><td>Aujourd'hui 06h00</td><td>26</td><td class="row-actions"><button>✎</button><button>🗑</button></td></tr>
+                <tr><td>Ruth K.</td><td><span class="chip off">Hors ligne</span></td><td>Aujourd'hui 07h00</td><td>24</td><td class="row-actions"><button>✎</button><button>🗑</button></td></tr>
+                <tr><td>Paul D.</td><td><span class="chip warn">En pause</span></td><td>Demain 08h00</td><td>19</td><td class="row-actions"><button>✎</button><button>🗑</button></td></tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- UTILISATEURS -->
+          <div class="wpanel" id="a-utilisateurs">
+            <div class="wcard" style="padding:0;">
+              <table class="wtable" style="margin:0;">
+                <tr><th>Nom</th><th>Email</th><th>Inscrit le</th><th>Statut</th><th></th></tr>
+                <tr><td>Rufin Ayedoun</td><td>rufin@email.com</td><td>12 juil. 2026</td><td><span class="chip on">Actif</span></td><td class="row-actions"><button>✎</button><button>🗑</button></td></tr>
+                <tr><td>Marie Dossou</td><td>marie.d@email.com</td><td>10 juil. 2026</td><td><span class="chip on">Actif</span></td><td class="row-actions"><button>✎</button><button>🗑</button></td></tr>
+                <tr><td>Jean Koffi</td><td>jean.k@email.com</td><td>08 juil. 2026</td><td><span class="chip off">Suspendu</span></td><td class="row-actions"><button>✎</button><button>🗑</button></td></tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- PLANNING -->
+          <div class="wpanel" id="a-planning">
+            <div class="day-tabs"><button class="active">Aujourd'hui</button><button>Demain</button><button>Semaine</button></div>
+            <div class="wcard">
+              <table class="wtable">
+                <tr><th>Horaire</th><th>Animateur</th><th>Émission</th><th>Statut</th><th></th></tr>
+                <tr><td>05h–06h</td><td>Edith A.</td><td>Réveil du Matin</td><td><span class="chip on">En cours</span></td><td class="row-actions"><button>✎</button></td></tr>
+                <tr><td>06h–07h</td><td>Chadrac T.</td><td>Louange &amp; Adoration</td><td><span class="chip off">À venir</span></td><td class="row-actions"><button>✎</button></td></tr>
+                <tr><td>07h–08h</td><td>Ruth K.</td><td>Parole du Jour</td><td><span class="chip off">À venir</span></td><td class="row-actions"><button>✎</button></td></tr>
+                <tr><td>08h–09h</td><td>Paul D.</td><td>Intercession</td><td><span class="chip off">À venir</span></td><td class="row-actions"><button>✎</button></td></tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- EMISSIONS -->
+          <div class="wpanel" id="a-emissions">
+            <div class="wcard" style="padding:0;">
+              <table class="wtable" style="margin:0;">
+                <tr><th>Émission</th><th>Animateur</th><th>Date</th><th>Durée</th><th>Vues</th><th></th></tr>
+                <tr><td>Réveil du Matin</td><td>Edith A.</td><td>Hier</td><td>42:10</td><td>3 210</td><td class="row-actions"><button>▶</button><button>🗑</button></td></tr>
+                <tr><td>Louange &amp; Adoration</td><td>Chadrac T.</td><td>Hier</td><td>58:32</td><td>2 870</td><td class="row-actions"><button>▶</button><button>🗑</button></td></tr>
+                <tr><td>Parole du Jour</td><td>Ruth K.</td><td>Lundi</td><td>37:05</td><td>4 102</td><td class="row-actions"><button>▶</button><button>🗑</button></td></tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- DONS -->
+          <div class="wpanel" id="a-dons">
+            <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
+              <div class="wstat"><div class="wnum">128 000 FCFA</div><div class="wlab">Aujourd'hui</div></div>
+              <div class="wstat"><div class="wnum">742 500 FCFA</div><div class="wlab">Cette semaine</div></div>
+              <div class="wstat"><div class="wnum">2 940 000 FCFA</div><div class="wlab">Ce mois</div></div>
+            </div>
+            <div class="v24-card" style="margin-bottom:14px"><div class="v24-don-grid"><div class="v24-metric"><b>5 820 FCFA</b><span>don moyen</span></div><div class="v24-metric"><b>84</b><span>donateurs aujourd’hui</span></div><div class="v24-metric"><b>17</b><span>donateurs récurrents</span></div><div class="v24-metric"><b>+18%</b><span>vs semaine passée</span></div></div><div style="margin-top:14px"><div class="v24-method"><span>Mobile Money</span><div class="v24-bar"><i style="width:72%"></i></div><b>72%</b></div><div class="v24-method"><span>Carte</span><div class="v24-bar"><i style="width:18%"></i></div><b>18%</b></div><div class="v24-method"><span>PayPal</span><div class="v24-bar"><i style="width:10%"></i></div><b>10%</b></div></div></div>
+            <div class="wcard" style="padding:0;">
+              <table class="wtable" style="margin:0;">
+                <tr><th>Donateur</th><th>Montant</th><th>Moyen</th><th>Émission</th><th>Date</th></tr>
+                <tr><td>Anonyme</td><td>5 000 FCFA</td><td>Fedapay (MoMo)</td><td>Réveil du Matin</td><td>Auj. 09:12</td></tr>
+                <tr><td>Marie D.</td><td>10 000 FCFA</td><td>Stripe</td><td>Réveil du Matin</td><td>Auj. 08:55</td></tr>
+                <tr><td>J. Koffi</td><td>25 000 FCFA</td><td>PayPal</td><td>Louange &amp; Adoration</td><td>Hier 19:30</td></tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- NOTIFICATIONS -->
+          <div class="wpanel" id="a-notifs">
+            <div class="wgrid2">
+              <div class="wcard">
+                <h3>Historique</h3>
+                <table class="wtable">
+                  <tr><th>Titre</th><th>Envoyée</th></tr>
+                  <tr><td>Direct spécial ce soir 20h</td><td>Hier</td></tr>
+                  <tr><td>Nouvelle émission ajoutée</td><td>Il y a 3 jours</td></tr>
+                </table>
+              </div>
+              <div class="wcard">
+                <h3>Nouvelle notification</h3>
+                <div class="field-inline"><label>Titre</label><input placeholder="Ex : Direct spécial ce soir"></div>
+                <div class="field-inline"><label>Message</label><textarea rows="3" placeholder="Contenu de la notification"></textarea></div>
+                <button class="wbtn orange">Envoyer à tous les fidèles</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- PARAMETRES -->
+          <div class="wpanel" id="a-params">
+            <div class="wcard">
+              <h3>Général</h3>
+              <div class="form-grid2">
+                <div class="field-inline"><label>Nom de la plateforme</label><input value="I24H"></div>
+                <div class="field-inline"><label>Nom de domaine</label><input value="i24h.app"></div>
+              </div>
+            </div>
+            <div class="wcard">
+              <h3>Moyens de paiement</h3>
+              <div class="form-grid2">
+                <div class="field-inline"><label>Clé API Fedapay</label><input placeholder="••••••••••••"></div>
+                <div class="field-inline"><label>Clé API Stripe</label><input placeholder="••••••••••••"></div>
+                <div class="field-inline"><label>Client ID PayPal</label><input placeholder="••••••••••••"></div>
+              </div>
+              <button class="wbtn primary">Enregistrer</button>
+            </div>
+          </div>
+
+        </div>
+        <div class="web-bottombar">
+          <button class="active" data-p="a-dashboard"><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M4 19V9M10 19V5M16 19v-8M22 19V3"/></svg></span><span>Accueil</span></button>
+          <button data-p="a-animateurs"><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M12 14a4 4 0 0 0 4-4V6a4 4 0 1 0-8 0v4a4 4 0 0 0 4 4Z"/><path d="M19 10a7 7 0 0 1-14 0M12 17v4M8 21h8"/></svg></span><span>Anim.</span></button>
+          <button data-p="a-planning"><span class="i24h-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span><span>Planning</span></button>
+          <button data-p="a-dons"><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.3-9.3-8.4C.8 8.2 3.4 4.5 7 4.5c2.2 0 3.8 1.2 5 3 1.2-1.8 2.8-3 5-3 3.6 0 6.2 3.7 4.3 7.1C19 15.7 12 20 12 20Z"/></svg></span><span>Dons</span></button>          <button data-p="a-params"><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z"/><path d="M4.9 9.1 3.8 7l2.1-2.1 2.1 1.1A7.7 7.7 0 0 1 10 5l.5-2.4h3L14 5c.7.2 1.4.5 2 .9l2.1-1.1L20.2 7l-1.1 2.1c.4.6.7 1.3.9 2l2.4.5v3l-2.4.5c-.2.7-.5 1.4-.9 2.1l1.1 2.1-2.1 2.1-2.1-1.1c-.6.4-1.3.7-2 .9l-.5 2.4h-3L10 21c-.7-.2-1.4-.5-2-.9l-2.1 1.1L3.8 19l1.1-2.1c-.4-.7-.7-1.4-.9-2.1L1.6 14v-3l2.4-.5c.2-.7.5-1.4.9-2Z"/></svg></span><span>Réglages</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- =========================================================
+     ANIMATEUR WEB VIEW
+========================================================= -->
+<div class="platform-view" id="view-animateur">
+  <div class="section-label">Plateforme Web — Animateur</div>
+  <div class="device-toggle" data-scope="animateur">
+    <button class="device-btn active" data-w="w-desktop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>Ordinateur</button>
+    <button class="device-btn" data-w="w-tablet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/></svg>Tablette</button>
+    <button class="device-btn" data-w="w-mobile"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="2" width="12" height="20" rx="2"/></svg>Mobile</button>
+  </div>
+
+  <div class="device-frame w-desktop" id="frame-animateur">
+    <div class="web-shell">
+      <div class="web-sidebar">
+        <div class="wlogo">I<b>24H</b></div>
+        <div class="web-nav-item active" data-p="n-studio"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M9 9l6 3-6 3z"/></svg><span class="lbl">Studio direct</span></div>
+        <div class="web-nav-item" data-p="n-planning"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><span class="lbl">Mon planning</span></div>
+        <div class="web-nav-item" data-p="n-dons"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.35-9.5-8.5C.5 8.5 3 5 6.5 5c2 0 3.5 1 5.5 3 2-2 3.5-3 5.5-3C21 5 23.5 8.5 21.5 12.5 19 16.65 12 21 12 21z"/></svg><span class="lbl">Dons reçus</span></div>
+        <div class="web-nav-item" data-p="n-profil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg><span class="lbl">Mon profil</span></div>
+        <div class="side-foot"><div class="savt">EA</div><div><div class="sname">Edith A.</div><div class="srole">Animatrice</div></div></div>
+      </div>
+
+      <div class="web-main">
+        <div class="web-topbar">
+          <button class="hamb"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+          <div class="wtitle" id="n-title">Studio direct</div>
+          <div class="wactions"><div class="avatar">EA</div></div>
+        </div>
+
+        <div class="web-content">
+
+          <!-- STUDIO -->
+          <div class="wpanel active" id="n-studio">
+<div class="v21-studio-top"><div><div class="v21-ready">● STUDIO PRÊT</div><div style="font-size:11px;color:var(--muted);margin-top:3px">Votre direct est actuellement actif</div></div><div class="v21-timer" id="v21Timer">00:47:32</div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;padding:13px 15px;border-radius:15px;background:#fff7ef;border:1px solid #f3dfcc;"><div><b style="font-size:12px;color:var(--navy);">Prochaine étape</b><div style="font-size:11px;color:var(--muted);margin-top:3px;">Vérifiez caméra, micro et intentions avant le direct.</div></div><button class="wbtn orange" style="white-space:nowrap;" type="button" onclick="I24H.openChecklist()">Checklist</button></div>
+            <div class="wgrid2">
+              <div class="wcard">
+                <h3>Réveil du Matin · 05h00–06h00</h3>
+                <div class="studio-video">
+                  <div class="rec-badge"><span class="rec-dot"></span>DIRECT</div>
+                  <svg width="46" height="46" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3z"/></svg>
+                </div>
+                <div class="studio-controls">
+                  <button class="sc-start" type="button" onclick="I24H.confirmStop()">■ Arrêter le direct</button>
+                  <button class="sc-toggle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0M12 19v3"/></svg>Micro</button>
+                  <button class="sc-toggle"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3z"/></svg>Caméra</button>
+                </div>
+              </div>
+
+              <div class="wcard">
+                <div class="tab-strip">
+                  <button class="active" data-t="n-participants">Participants</button>
+                  <button data-t="n-chat">Chat</button>
+                  <button data-t="n-intentions">Intentions</button>
+                </div>
+
+                <div class="tpanel active" id="n-participants">
+                  <div class="participant-row">
+                    <div class="pav">MD</div><div class="pname">Marie Dossou</div>
+                    <div class="ctrl">
+                      <button title="Couper le micro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0M12 19v3"/></svg></button>
+                      <button title="Couper la caméra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3z"/></svg></button>
+                    </div>
+                  </div>
+                  <div class="participant-row">
+                    <div class="pav">JK</div><div class="pname">Jean Koffi</div>
+                    <div class="ctrl">
+                      <button class="muted" title="Micro coupé"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 1l22 22M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-5.7-1.3M19 11a7 7 0 0 1-11 5.7M12 19v3"/></svg></button>
+                      <button title="Couper la caméra"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3z"/></svg></button>
+                    </div>
+                  </div>
+                  <div class="participant-row">
+                    <div class="pav">RK</div><div class="pname">Ruth K.</div>
+                    <div class="ctrl">
+                      <button title="Couper le micro"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0M12 19v3"/></svg></button>
+                      <button class="muted" title="Caméra coupée"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 1l22 22"/><rect x="2" y="6" width="14" height="12" rx="2"/></svg></button>
+                    </div>
+                  </div>
+                  <button class="wbtn ghost" style="width:100%; margin-top:8px;" type="button" onclick="I24H.showToast('Invitation préparée')">+ Inviter un participant</button>
+                </div>
+
+                <div class="tpanel" id="n-chat" style="display:none;">
+                  <div class="msg" style="margin-bottom:10px;"><b>Marie:</b><span> Amen, merci pour ce message</span></div>
+                  <div class="msg" style="margin-bottom:10px;"><b>Jean:</b><span> Merci Seigneur pour cette journée</span></div>
+                  <div class="msg" style="margin-bottom:14px;"><b>Ruth:</b><span> Bénédictions à toute l'équipe</span></div>
+                  <div class="field-inline"><input placeholder="Répondre dans le chat…"></div>
+                </div>
+
+                <div class="tpanel" id="n-intentions" style="display:none;">
+                  <div class="participant-row" style="align-items:flex-start;">
+                    <div class="pav">MD</div>
+                    <div style="flex:1;"><div class="pname" style="margin-bottom:3px;">Marie Dossou</div><div style="font-size:11.5px; color:var(--ink-soft);">Prière pour la guérison de ma mère</div></div>
+                  </div>
+                  <div class="participant-row" style="align-items:flex-start;">
+                    <div class="pav">—</div>
+                    <div style="flex:1;"><div class="pname" style="margin-bottom:3px;">Anonyme</div><div style="font-size:11.5px; color:var(--ink-soft);">Réussite aux examens de mon fils</div></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- PLANNING ANIMATEUR -->
+          <div class="wpanel" id="n-planning">
+            <div class="wcard">
+              <h3>Mes prochains créneaux</h3>
+              <table class="wtable">
+                <tr><th>Date</th><th>Horaire</th><th>Émission</th><th>Statut</th></tr>
+                <tr><td>Aujourd'hui</td><td>05h–06h</td><td>Réveil du Matin</td><td><span class="chip on">En cours</span></td></tr>
+                <tr><td>Demain</td><td>05h–06h</td><td>Réveil du Matin</td><td><span class="chip off">À venir</span></td></tr>
+                <tr><td>Après-demain</td><td>05h–06h</td><td>Réveil du Matin</td><td><span class="chip off">À venir</span></td></tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- DONS RECUS -->
+          <div class="wpanel" id="n-dons">
+            <div class="stat-grid" style="grid-template-columns:repeat(3,1fr);">
+              <div class="wstat"><div class="wnum">45 000 FCFA</div><div class="wlab">Reçus aujourd'hui</div></div>
+              <div class="wstat"><div class="wnum">312 000 FCFA</div><div class="wlab">Ce mois</div></div>
+              <div class="wstat"><div class="wnum">128</div><div class="wlab">Dons reçus (total)</div></div>
+            </div>
+            <div class="wcard" style="padding:0;">
+              <table class="wtable" style="margin:0;">
+                <tr><th>Donateur</th><th>Montant</th><th>Émission</th><th>Date</th></tr>
+                <tr><td>Anonyme</td><td>5 000 FCFA</td><td>Réveil du Matin</td><td>Auj. 09:12</td></tr>
+                <tr><td>Marie D.</td><td>10 000 FCFA</td><td>Réveil du Matin</td><td>Auj. 08:55</td></tr>
+              </table>
+            </div>
+          </div>
+
+          <!-- PROFIL ANIMATEUR -->
+          <div class="wpanel" id="n-profil">
+            <div class="wcard">
+              <h3>Informations</h3>
+              <div class="form-grid2">
+                <div class="field-inline"><label>Nom complet</label><input value="Edith A."></div>
+                <div class="field-inline"><label>Email</label><input value="edith.a@i24h.app"></div>
+              </div>
+              <div class="field-inline"><label>Bio</label><textarea rows="3">Animatrice du programme "Réveil du Matin" depuis 2024.</textarea></div>
+              <button class="wbtn primary">Enregistrer les modifications</button>
+            </div>
+          </div>
+
+        </div>
+        <div class="web-bottombar">
+          <button class="active" data-p="n-studio"><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M12 14a4 4 0 0 0 4-4V6a4 4 0 1 0-8 0v4a4 4 0 0 0 4 4Z"/><path d="M19 10a7 7 0 0 1-14 0M12 17v4M8 21h8"/></svg></span><span>Studio</span></button>
+          <button data-p="n-planning"><span class="i24h-icon"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span><span>Planning</span></button>
+          <button data-p="n-dons"><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.3-9.3-8.4C.8 8.2 3.4 4.5 7 4.5c2.2 0 3.8 1.2 5 3 1.2-1.8 2.8-3 5-3 3.6 0 6.2 3.7 4.3 7.1C19 15.7 12 20 12 20Z"/></svg></span><span>Dons</span></button>
+          <button data-p="n-profil"><span class="i24h-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 5-6 8-6s6.5 2 8 6"/></svg></span><span>Profil</span></button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
-(async()=>{
-  try{
-    const b64="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";
-    const raw=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
-    const stream=new Blob([raw]).stream().pipeThrough(new DecompressionStream('gzip'));
-    const text=await new Response(stream).text();
-    document.open();document.write(text);document.close();
-  }catch(e){
-    document.body.innerHTML='<pre style="font-family:system-ui;padding:24px;white-space:pre-wrap">Impossible de charger la maquette I24H. '+String(e)+'</pre>';
+  // ---- platform switcher ----
+  document.querySelectorAll('.platform-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      document.querySelectorAll('.platform-btn').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      document.querySelectorAll('.platform-view').forEach(v=>v.classList.remove('active'));
+      document.getElementById(btn.dataset.target).classList.add('active');
+    });
+  });
+
+  // ---- device size toggles ----
+  document.querySelectorAll('.device-toggle').forEach(group=>{
+    const scope = group.dataset.scope;
+    const frame = document.getElementById('frame-'+scope);
+    group.querySelectorAll('.device-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        group.querySelectorAll('.device-btn').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        frame.classList.remove('w-desktop','w-tablet','w-mobile');
+        frame.classList.add(btn.dataset.w);
+      });
+    });
+  });
+
+  // ---- mobile app bottom nav ----
+  const navItems = document.querySelectorAll('#view-mobile .nav-item');
+  const pages = { home:'page-home', programme:'page-programme', replay:'page-replay', don:'page-don', profil:'page-profil' };
+  navItems.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      navItems.forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      Object.values(pages).forEach(id=> document.getElementById(id).style.display = 'none');
+      document.getElementById(pages[btn.dataset.page]).style.display = 'block';
+    });
+  });
+
+  // ---- onboarding ----
+  const slides = document.querySelectorAll('.ob-slide');
+  const dotsWrap = document.getElementById('obDots');
+  let idx = 0;
+  slides.forEach((s,i)=>{
+    const d = document.createElement('span');
+    if(i===0) d.classList.add('active');
+    d.addEventListener('click', ()=> goTo(i));
+    dotsWrap.appendChild(d);
+  });
+  function goTo(i){
+    idx = i;
+    slides.forEach(s=>s.classList.remove('active'));
+    slides[idx].classList.add('active');
+    [...dotsWrap.children].forEach((d,j)=>d.classList.toggle('active', j===idx));
+    document.getElementById('obNextLabel').textContent = idx === slides.length-1 ? 'Commencer' : 'Suivant';
   }
+  goTo(0);
+  document.getElementById('obNext').addEventListener('click', ()=>{
+    if(idx === slides.length-1){ showAuth(); } else { goTo(idx+1); }
+  });
+  document.getElementById('obSkip').addEventListener('click', showAuth);
+  document.getElementById('obToggle').addEventListener('click', ()=>{
+    document.getElementById('auth').classList.add('hidden');
+    document.getElementById('onboarding').classList.remove('hidden');
+    goTo(0);
+  });
+  function showAuth(){
+    document.getElementById('onboarding').classList.add('hidden');
+    document.getElementById('auth').classList.remove('hidden');
+  }
+  function hideAuth(){ document.getElementById('auth').classList.add('hidden'); }
+  document.getElementById('goLogin').addEventListener('click', ()=>{
+    document.getElementById('authSignup').style.display = 'none';
+    document.getElementById('authLogin').style.display = 'block';
+  });
+  document.getElementById('goSignup').addEventListener('click', ()=>{
+    document.getElementById('authLogin').style.display = 'none';
+    document.getElementById('authSignup').style.display = 'block';
+  });
+  document.getElementById('btnSignup').addEventListener('click', hideAuth);
+  document.getElementById('btnLogin').addEventListener('click', hideAuth);
+  document.getElementById('authGuest').addEventListener('click', hideAuth);
+  document.getElementById('authToggle').addEventListener('click', ()=>{
+    document.getElementById('onboarding').classList.add('hidden');
+    document.getElementById('auth').classList.remove('hidden');
+  });
+
+  // ---- generic web nav (admin + animateur), works for sidebar + bottombar ----
+  function wireWebNav(rootId, titleId){
+    const root = document.getElementById(rootId);
+    const navBtns = root.querySelectorAll('.web-nav-item, .web-bottombar button');
+    navBtns.forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const target = btn.dataset.p;
+        navBtns.forEach(b=>b.classList.remove('active'));
+        root.querySelectorAll('[data-p="'+target+'"]').forEach(b=>b.classList.add('active'));
+        root.querySelectorAll('.wpanel').forEach(p=>p.classList.remove('active'));
+        document.getElementById(target).classList.add('active');
+        const label = btn.querySelector('.lbl') ? btn.querySelector('.lbl').textContent : btn.textContent.trim();
+        if(document.getElementById(titleId)) document.getElementById(titleId).textContent = label;
+      });
+    });
+  }
+  wireWebNav('view-admin','a-title');
+  wireWebNav('view-animateur','n-title');
+
+  // ---- studio tab strip (animateur) ----
+  document.querySelectorAll('.tab-strip button').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const strip = btn.closest('.tab-strip');
+      strip.querySelectorAll('button').forEach(b=>b.classList.remove('active'));
+      btn.classList.add('active');
+      const wrap = strip.parentElement;
+      wrap.querySelectorAll('.tpanel').forEach(p=> p.style.display = 'none');
+      document.getElementById(btn.dataset.t).style.display = 'block';
+    });
+  });
+</script>
+<script>
+// ---- I24H V2 micro-interactions ----
+document.querySelectorAll('.reactions button').forEach(btn=>{
+  btn.addEventListener('click',()=>{btn.animate([{transform:'scale(1)'},{transform:'scale(1.18)'},{transform:'scale(1)'}],{duration:260});});
+});
+document.querySelectorAll('.wbtn,.donate-cta,.auth-cta').forEach(btn=>{
+  btn.addEventListener('click',()=>{if(btn.type!=='submit'){btn.animate([{transform:'translateY(0)'},{transform:'translateY(-1px)'},{transform:'translateY(0)'}],{duration:180});}});
+});
+// clickable chat composer prototype
+const chatInput=document.querySelector('.chat-input');
+if(chatInput){chatInput.setAttribute('role','textbox');chatInput.tabIndex=0;chatInput.addEventListener('click',()=>{chatInput.textContent='';chatInput.classList.add('focus');chatInput.contentEditable='true';chatInput.focus();});}
+// Better day tabs: active state without navigation side effects
+ document.querySelectorAll('.day-tabs').forEach(group=>group.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{group.querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active');})));
+</script>
+
+
+<div class="v21-modal" id="v21IntentionsModal" aria-hidden="true">
+ <div class="v21-sheet"><h3>Votre intention de prière</h3><div class="sub">Écrivez librement. Vous pouvez rester anonyme.</div>
+ <textarea id="v21IntentText" rows="5" style="width:100%;border:1px solid #e1e6ee;border-radius:13px;padding:12px;font:12px Inter;resize:none" placeholder="Ex. Priez pour ma famille, mon travail, ma santé…"></textarea>
+ <label style="display:flex;align-items:center;gap:8px;font-size:11px;color:#596477;margin-top:10px"><input type="checkbox" checked> Envoyer anonymement</label>
+ <button class="close" onclick="I24H.submitIntent()">Envoyer mon intention</button></div>
+</div>
+<div class="v21-modal" id="v21ChecklistModal" aria-hidden="true">
+ <div class="v21-sheet"><h3>Checklist avant le direct</h3><div class="sub">Quelques vérifications pour garder la qualité du direct I24H.</div>
+  <label class="v21-check"><input type="checkbox" checked> Caméra opérationnelle</label><label class="v21-check"><input type="checkbox" checked> Micro et niveau audio vérifiés</label><label class="v21-check"><input type="checkbox"> Connexion stable</label><label class="v21-check"><input type="checkbox"> Intentions de prière ouvertes</label><label class="v21-check"><input type="checkbox"> Programme de la prochaine relève confirmé</label>
+  <button class="close" onclick="I24H.closeModals()">Terminer la vérification</button></div>
+</div>
+<script>
+window.I24H={
+ openIntentions(){document.getElementById('v21IntentionsModal').classList.add('open')},
+ openChecklist(){document.getElementById('v21ChecklistModal').classList.add('open')},
+ closeModals(){document.querySelectorAll('.v21-modal').forEach(m=>m.classList.remove('open'))},
+ submitIntent(){const t=document.getElementById('v21IntentText');if(!t.value.trim()){t.focus();return} t.value=''; this.closeModals(); this.showToast('Votre intention a bien été reçue');}
+};
+document.querySelectorAll('.v21-modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('open')}));
+(function(){let sec=47*60+32;const el=document.getElementById('v21Timer');if(!el)return;setInterval(()=>{sec++;const h=Math.floor(sec/3600),m=Math.floor(sec%3600/60),s=sec%60;el.textContent=[h,m,s].map(x=>String(x).padStart(2,'0')).join(':')},1000)})();
+// amount/payment selections
+ document.querySelectorAll('.amount-grid button').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.amount-grid button').forEach(x=>x.classList.remove('active'));b.classList.add('active')}));
+ document.querySelectorAll('.pay-method').forEach(b=>b.addEventListener('click',()=>{document.querySelectorAll('.pay-method').forEach(x=>x.classList.remove('active'));b.classList.add('active')}));
+</script>
+<div class="v22-toast" id="v22Toast"></div>
+<script>
+I24H.showToast=function(message){const t=document.getElementById('v22Toast');t.textContent=message;t.classList.add('show');clearTimeout(window.__toast);window.__toast=setTimeout(()=>t.classList.remove('show'),2200)};
+I24H.confirmStop=function(){if(confirm('Arrêter le direct maintenant ?')){I24H.showToast('Direct arrêté — retour au studio')}};
+document.querySelectorAll('.v22-quick button').forEach(b=>b.addEventListener('click',()=>{b.parentElement.querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active')}));
+</script>
+
+<style id="v23-styles">
+/* I24H V2.3 — Direct immersif + Studio pro */
+.v23-live-shell{margin-top:14px;border-radius:22px;overflow:hidden;background:#0c1d38;box-shadow:0 18px 45px rgba(15,35,65,.18);color:#fff;position:relative}
+.v23-live-visual{height:210px;position:relative;background:radial-gradient(circle at 50% 25%,rgba(255,213,143,.28),transparent 38%),linear-gradient(145deg,#193d6d,#0b1c35 72%);display:flex;align-items:center;justify-content:center}
+.v23-live-visual:before{content:'I24H';font-family:Fraunces,serif;font-size:46px;letter-spacing:.08em;color:rgba(255,255,255,.1)}
+.v23-live-top{position:absolute;top:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center}
+.v23-badge{background:#fff;color:#9a3b32;border-radius:999px;padding:6px 9px;font-size:9px;font-weight:900}.v23-viewers{background:rgba(0,0,0,.35);backdrop-filter:blur(8px);padding:6px 9px;border-radius:999px;font-size:9px;font-weight:800}
+.v23-live-controls{position:absolute;bottom:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:center}.v23-live-controls button{border:0;border-radius:999px;width:36px;height:36px;background:rgba(255,255,255,.14);color:#fff;cursor:pointer}.v23-live-controls .main{width:44px;height:44px;background:#fff;color:#0d2444}
+.v23-live-info{padding:14px 15px 16px}.v23-live-info h3{margin:0;font-family:Fraunces,serif;font-size:19px}.v23-live-info p{margin:4px 0 0;color:rgba(255,255,255,.65);font-size:10px}
+.v23-reaction-bar{display:flex;gap:7px;overflow:visible;flex-wrap:wrap;margin-top:12px}.v23-reaction{border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:#fff;border-radius:999px;padding:8px 10px;font-size:10px;white-space:nowrap;cursor:pointer}.v23-reaction:active{transform:scale(.97)}
+.v23-section{margin-top:14px;padding:14px;border:1px solid #e7ebf1;border-radius:18px;background:#fff}.v23-section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.v23-section-head h4{margin:0;color:var(--navy);font-size:13px}.v23-link{border:0;background:none;color:#45648c;font-size:10px;font-weight:800;cursor:pointer}
+.v23-chat{display:flex;gap:9px;align-items:flex-end}.v23-chat-avatar{width:30px;height:30px;border-radius:50%;background:#eef3fa;display:grid;place-items:center;font-size:12px}.v23-bubble{background:#f5f7fa;border-radius:14px 14px 14px 4px;padding:8px 10px;font-size:10px;color:#425069;line-height:1.4}.v23-bubble b{display:block;color:var(--navy);font-size:9px;margin-bottom:2px}.v23-intent-card{display:flex;gap:10px;align-items:center;background:linear-gradient(135deg,#fff8ee,#fff);border:1px solid #f0dfc9;border-radius:14px;padding:11px}.v23-intent-icon{width:36px;height:36px;border-radius:11px;background:#f6e7d1;display:grid;place-items:center}.v23-intent-card b{display:block;color:var(--navy);font-size:11px}.v23-intent-card span{display:block;color:var(--muted);font-size:9px;margin-top:2px}
+/* Studio */
+.v23-studio-grid{display:grid;grid-template-columns:1.45fr .8fr;gap:12px}.v23-preview{min-height:260px;border-radius:18px;overflow:hidden;background:#0a1930;position:relative;color:#fff;display:flex;align-items:center;justify-content:center}.v23-preview:before{content:'APERÇU DU DIRECT';letter-spacing:.16em;font-size:10px;color:rgba(255,255,255,.3)}.v23-preview .live{position:absolute;top:12px;left:12px;background:#fff;color:#a43b31;border-radius:999px;padding:6px 9px;font-size:9px;font-weight:900}.v23-preview .time{position:absolute;top:12px;right:12px;background:rgba(0,0,0,.35);padding:6px 9px;border-radius:999px;font-size:9px}.v23-preview .lower{position:absolute;bottom:12px;left:12px;right:12px;display:flex;justify-content:space-between;align-items:end}.v23-preview .lower strong{font-family:Fraunces,serif;font-size:17px}.v23-preview .lower span{display:block;color:rgba(255,255,255,.65);font-size:9px;margin-top:2px}
+.v23-side-card{border:1px solid #e6eaf0;border-radius:16px;padding:12px;background:#fff}.v23-side-card+.v23-side-card{margin-top:10px}.v23-side-card h4{margin:0 0 9px;color:var(--navy);font-size:11px}.v23-check{display:flex;gap:8px;align-items:center;padding:7px 0;font-size:9.5px;color:#536177;border-bottom:1px solid #eef0f4}.v23-check:last-child{border-bottom:0}.v23-check i{width:17px;height:17px;border-radius:50%;background:#e8f4ed;color:#27734f;display:grid;place-items:center;font-style:normal;font-size:9px}.v23-mix{display:grid;grid-template-columns:1fr 1fr;gap:7px}.v23-mix button{border:1px solid #e1e6ed;background:#f8fafc;border-radius:10px;padding:9px;font-size:9px;font-weight:800;color:#40516a;cursor:pointer}.v23-mix button.active{background:#102d56;color:#fff;border-color:#102d56}
+.v23-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:12px}.v23-kpi{padding:10px;border-radius:13px;background:#f7f9fb;border:1px solid #e6eaf0}.v23-kpi b{display:block;color:var(--navy);font-size:15px}.v23-kpi span{font-size:8px;color:var(--muted)}
+@media(max-width:760px){.v23-studio-grid{grid-template-columns:1fr}.v23-preview{min-height:220px}.v23-kpis{grid-template-columns:1fr 1fr}}
+</style>
+<script>
+(function(){
+ const $=s=>document.querySelector(s);
+ const add=(sel,html,where='beforeend')=>{const el=$(sel);if(el)el.insertAdjacentHTML(where,html)};
+ // Mobile: insert immersive live card before existing YouTube card
+ const yt=$('#view-mobile .yt-frame');
+ if(yt && !$('#v23-mobile-live')){
+   const wrap=yt.closest('.v2-live-card')?.parentElement || yt.parentElement;
+   if(wrap) wrap.insertAdjacentHTML('beforebegin',`<div id="v23-mobile-live" class="v23-live-shell">
+    <div class="v23-live-visual"><div class="v23-live-top"><span class="v23-badge">● EN DIRECT</span><span class="v23-viewers">1 284 connectés</span></div><div class="v23-live-controls"><button onclick="I24H.showToast('Son activé')">🔊</button><button class="main" onclick="I24H.showToast('Mode plein écran')">▶</button><button onclick="I24H.showToast('Direct partagé')">↗</button></div></div>
+    <div class="v23-live-info"><h3>Réveil du Matin</h3><p>Edith A. · 05h00–06h00 · La prière commence ici.</p><div class="v23-reaction-bar"><button class="v23-reaction" onclick="I24H.showToast('Amen envoyé 🙏')"><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M7 11h10M8 8l4-4 4 4M9 12v4m6-4v4M6 20h12"/></svg></span> Amen</button><button class="v23-reaction" onclick="I24H.showToast('Vous priez avec la communauté ❤️')"><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.3-9.3-8.4C.8 8.2 3.4 4.5 7 4.5c2.2 0 3.8 1.2 5 3 1.2-1.8 2.8-3 5-3 3.6 0 6.2 3.7 4.3 7.1C19 15.7 12 20 12 20Z"/></svg></span> Je prie avec vous</button><button class="v23-reaction" onclick="I24H.showToast('Gloire à Dieu 🔥')"><span class="i24h-icon"><svg viewBox="0 0 24 24"><path d="M12 21c4.5 0 7-2.8 7-6.2 0-3-2.1-5.1-4.3-7.8-.3 2-1.2 3.1-2.2 3.8.1-3.3-1.4-5.8-3.1-7.8.1 4-4.4 6.5-4.4 11.2C5 18.2 7.8 21 12 21Z"/></svg></span> Gloire à Dieu</button></div></div></div>`);
+ }
+ // Add community chat teaser if not present
+ const liveShell=$('#v23-mobile-live');
+ if(liveShell && !$('#v23-chat')) liveShell.insertAdjacentHTML('afterend',`<div id="v23-chat" class="v23-section"><div class="v23-section-head"><h4>La communauté prie avec vous</h4><button class="v23-link" onclick="I24H.showToast('Ouverture du chat')">Voir le chat</button></div><div class="v23-chat"><div class="v23-chat-avatar">M</div><div class="v23-bubble"><b>Marie D.</b>Je prie avec vous depuis Cotonou. Que Dieu vous accompagne. 🙏</div></div></div>`);
+ // Studio: enrich existing studio area
+ const studio=document.querySelector('#n-studio');
+ if(studio && !$('#v23-studio-pro')){
+   const host=studio.querySelector('.tpanel') || studio;
+   host.insertAdjacentHTML('afterbegin',`<div id="v23-studio-pro" class="v23-studio-grid"><div><div class="v23-preview"><span class="live">● EN DIRECT</span><span class="time">12:48</span><div class="lower"><div><strong>Réveil du Matin</strong><span>Edith A. · 1 284 fidèles</span></div><span>1080p · 18 Mbps</span></div></div><div class="v23-kpis"><div class="v23-kpi"><b>1 284</b><span>spectateurs</span></div><div class="v23-kpi"><b>128</b><span>intentions</span></div><div class="v23-kpi"><b>94%</b><span>qualité</span></div><div class="v23-kpi"><b>+8</b><span>min engagées</span></div></div></div><div><div class="v23-side-card"><h4>Préparation</h4><div class="v23-check"><i>✓</i> Caméra connectée</div><div class="v23-check"><i>✓</i> Micro opérationnel</div><div class="v23-check"><i>✓</i> Réseau stable</div><div class="v23-check"><i>✓</i> Programme chargé</div></div><div class="v23-side-card"><h4>Scène</h4><div class="v23-mix"><button class="active" onclick="I24H.showToast('Scène principale')">Principale</button><button onclick="I24H.showToast('Gros plan activé')">Gros plan</button><button onclick="I24H.showToast('Bannière affichée')">Bannière</button><button onclick="I24H.showToast('Écran prière')">Prière</button></div></div></div></div>`);
+ }
+ document.querySelectorAll('.v23-mix button').forEach(b=>b.addEventListener('click',()=>{b.parentElement.querySelectorAll('button').forEach(x=>x.classList.remove('active'));b.classList.add('active')}));
 })();
 </script>
+
+<script id="v25-script">
+(function(){
+ const $=s=>document.querySelector(s);
+ const add=(sel,html,pos='beforeend')=>{const e=$(sel);if(e)e.insertAdjacentHTML(pos,html)};
+ const toast=m=>window.I24H&&I24H.showToast?I24H.showToast(m):alert(m);
+
+ // ADMIN — visual 24/7 control room
+ const dash=$('#a-dashboard');
+ if(dash && !$('#v25-admin')){
+   dash.insertAdjacentHTML('beforeend',`<div id="v25-admin" class="v25-wrap">
+    <div class="v25-kpis">
+      <div class="v25-kpi"><b>23h 41m</b><span>continuité aujourd'hui</span></div>
+      <div class="v25-kpi"><b>96%</b><span>couverture planning</span></div>
+      <div class="v25-kpi"><b>7 / 8</b><span>animateurs disponibles</span></div>
+      <div class="v25-kpi"><b>14</b><span>intentions en attente</span></div>
+    </div>
+    <div class="v25-grid">
+      <div class="v25-card"><h3>Chaîne 24/7</h3><div class="v25-sub">Vue des prochains relais — objectif : zéro interruption</div>
+        <div class="v25-progress"><i></i></div><div class="v25-sub">82% du planning de la journée est sécurisé</div>
+        <div class="v25-schedule">
+          <div class="v25-day"><strong>LUN</strong><div class="v25-date">08 SEPT.</div><div class="v25-slot live"><b>05h · Edith A.</b>Réveil</div><div class="v25-slot"><b>12h · Marc K.</b>Midi</div></div>
+          <div class="v25-day"><strong>MAR</strong><div class="v25-date">09 SEPT.</div><div class="v25-slot live"><b>05h · Edith A.</b>Réveil</div><div class="v25-slot warn"><b>18h · À confirmer</b>Veillée</div></div>
+          <div class="v25-day"><strong>MER</strong><div class="v25-date">10 SEPT.</div><div class="v25-slot"><b>06h · Joël M.</b>Matin</div><div class="v25-slot"><b>20h · Sarah T.</b>Prière</div></div>
+          <div class="v25-day"><strong>JEU</strong><div class="v25-date">11 SEPT.</div><div class="v25-slot"><b>05h · Edith A.</b>Réveil</div><div class="v25-slot"><b>21h · Paul D.</b>Nuit</div></div>
+          <div class="v25-day"><strong>VEN</strong><div class="v25-date">12 SEPT.</div><div class="v25-slot"><b>12h · Marc K.</b>Midi</div><div class="v25-slot"><b>20h · Sarah T.</b>Prière</div></div>
+          <div class="v25-day"><strong>SAM</strong><div class="v25-date">13 SEPT.</div><div class="v25-slot"><b>09h · Joël M.</b>Communauté</div><div class="v25-slot"><b>19h · Paul D.</b>Veillée</div></div>
+          <div class="v25-day"><strong>DIM</strong><div class="v25-date">14 SEPT.</div><div class="v25-slot"><b>08h · Sarah T.</b>Culte</div><div class="v25-slot"><b>20h · Edith A.</b>Clôture</div></div>
+        </div>
+      </div>
+      <div class="v25-card"><h3>Relève prioritaire</h3><div class="v25-sub">Prochain créneau nécessitant une vérification</div>
+        <div class="v25-person"><div class="v25-avatar">EA</div><div class="meta"><b>Edith A.</b><span>Réveil du Matin · en direct</span></div><span class="v25-status">LIVE</span></div>
+        <div class="v25-person"><div class="v25-avatar">MK</div><div class="meta"><b>Marc K.</b><span>Midi · dans 2h 12</span></div><span class="v25-status">Confirmé</span></div>
+        <div class="v25-person"><div class="v25-avatar">ST</div><div class="meta"><b>Sarah T.</b><span>Veillée · demain 18h</span></div><span class="v25-status off">À préparer</span></div>
+        <button class="v25-btn primary" style="margin-top:10px" onclick="toast('Ouverture du planning 24/7')">Gérer les relais</button>
+      </div>
+    </div>
+   </div>`);
+ }
+
+ // ADMIN — animator management
+ const anim=$('#a-animateurs');
+ if(anim && !$('#v25-animators')){
+   anim.insertAdjacentHTML('beforeend',`<div id="v25-animators" class="v25-wrap"><div class="v25-card"><h3>Équipe & disponibilité</h3><div class="v25-sub">Présence, prochain créneau et préparation technique</div>
+    <div class="v25-person"><div class="v25-avatar">EA</div><div class="meta"><b>Edith A.</b><span>Réveil du Matin · caméra + micro OK</span></div><span class="v25-status">Disponible</span></div>
+    <div class="v25-person"><div class="v25-avatar">MK</div><div class="meta"><b>Marc K.</b><span>Midi · dernière connexion il y a 18 min</span></div><span class="v25-status">Prêt</span></div>
+    <div class="v25-person"><div class="v25-avatar">ST</div><div class="meta"><b>Sarah T.</b><span>Veillée · configuration à vérifier</span></div><span class="v25-status off">À vérifier</span></div>
+    <div><span class="v25-chip">8 animateurs</span><span class="v25-chip">7 disponibles</span><span class="v25-chip">1 à vérifier</span></div>
+   </div></div>`);
+ }
+
+ // ADMIN — prayer intention queue
+ const users=$('#a-utilisateurs');
+ if(users && !$('#v25-prayers')){
+   users.insertAdjacentHTML('beforeend',`<div id="v25-prayers" class="v25-wrap"><div class="v25-card"><h3>Intentions à accompagner</h3><div class="v25-sub">Les demandes récentes qui attendent une prise en charge</div>
+    <div class="v25-intention"><div class="heart">🙏</div><div><b>Demande anonyme</b><p>« Priez pour ma famille et pour une décision importante. »</p><div class="v25-actions"><button class="v25-btn primary" onclick="toast('Intention assignée à l’animateur')">Assigner</button><button class="v25-btn" onclick="toast('Intention marquée comme reçue')">Reçue</button></div></div></div>
+    <div class="v25-intention"><div class="heart">❤️</div><div><b>Marie D.</b><p>« Que mon fils retrouve la paix et le courage. »</p><div class="v25-actions"><button class="v25-btn primary" onclick="toast('Intention assignée')">Assigner</button><button class="v25-btn" onclick="toast('Intention archivée')">Archiver</button></div></div></div>
+   </div></div>`);
+ }
+
+ // ADMIN — notifications workflow
+ const notif=$('#a-notifs');
+ if(notif && !$('#v25-notifs')){
+   notif.insertAdjacentHTML('beforeend',`<div id="v25-notifs" class="v25-wrap"><div class="v25-card"><h3>Campagnes programmées</h3><div class="v25-sub">Informer la communauté au bon moment, sans interrompre le direct</div>
+    <div class="v25-notif"><i class="v25-dot"></i><div class="meta"><b>Rappel — Réveil du Matin</b><span>Communauté · aujourd'hui 04h45</span></div><button class="v25-btn" onclick="toast('Aperçu de la notification')">Aperçu</button></div>
+    <div class="v25-notif"><i class="v25-dot"></i><div class="meta"><b>Nouvelle veillée de prière</b><span>Abonnés · demain 17h30</span></div><button class="v25-btn" onclick="toast('Notification modifiée')">Modifier</button></div>
+    <button class="v25-btn primary" style="margin-top:10px" onclick="toast('Création d’une nouvelle notification')">+ Programmer une notification</button>
+   </div></div>`);
+ }
+
+ // ANIMATEUR — intention inbox upgrade
+ const intents=$('#n-intentions');
+ if(intents && !$('#v25-intent-pro')){
+   intents.insertAdjacentHTML('afterbegin',`<div id="v25-intent-pro" class="v25-card" style="margin-bottom:12px"><h3>File de prière</h3><div class="v25-sub">3 intentions nouvelles · marquez celles que vous avez accompagnées</div>
+    <div class="v25-intention"><div class="heart">🙏</div><div><b>Demande anonyme</b><p>« Priez pour ma famille ce matin. »</p><button class="v25-btn primary" onclick="toast('Intention marquée comme priée 🙏')">Marquer comme priée</button></div></div>
+    <div class="v25-intention"><div class="heart">❤️</div><div><b>Jean P.</b><p>« Merci de prier pour mon travail. »</p><button class="v25-btn primary" onclick="toast('Intention marquée comme priée 🙏')">Marquer comme priée</button></div></div>
+   </div>`);
+ }
+})();
+</script>
+
 </body>
 </html>
