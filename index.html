@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="fr">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>I24H — Maquette</title></head>
+<body>
+<div id="loading" style="font-family:system-ui;padding:40px;text-align:center">Chargement de la maquette I24H…</div>
+<script>
+(async()=>{
+  try{
+    const parts=await Promise.all([1,2,3,4,5].map(i=>fetch('source/payload-'+i+'.txt').then(r=>r.text())));
+    const b64=parts.join('').trim();
+    const raw=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+    const stream=new Blob([raw]).stream().pipeThrough(new DecompressionStream('gzip'));
+    const text=await new Response(stream).text();
+    document.open();document.write(text);document.close();
+  }catch(e){document.body.innerHTML='<pre style="font-family:system-ui;padding:24px">Impossible de charger la maquette. '+String(e)+'</pre>'}
+})();
+</script>
+</body></html>
