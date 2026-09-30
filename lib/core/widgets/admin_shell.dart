@@ -1,0 +1,40 @@
+import 'package:flutter/material.dart';
+import '../../screens/admin/admin_dashboard_screen.dart';
+import '../../screens/admin/admin_planning_screen.dart';
+import '../../screens/admin/admin_animateurs_screen.dart';
+import '../../screens/admin/admin_users_screen.dart';
+import '../../screens/admin/admin_emissions_screen.dart';
+import '../../screens/admin/admin_dons_screen.dart';
+import '../../screens/admin/admin_notifications_screen.dart';
+import '../../screens/admin/admin_settings_screen.dart';
+import '../theme/app_theme.dart';
+
+class AdminShell extends StatefulWidget {
+  final int initialIndex;
+  const AdminShell({super.key, this.initialIndex = 0});
+  @override
+  State<AdminShell> createState() => _AdminShellState();
+}
+
+class _AdminShellState extends State<AdminShell> {
+  late int index;
+  final pages = const [
+    AdminDashboardContent(), AdminPlanningScreen(), AdminAnimateursScreen(), AdminUsersScreen(),
+    AdminEmissionsScreen(), AdminDonsScreen(), AdminNotificationsScreen(), AdminSettingsScreen(),
+  ];
+  final labels = const ['Vue d’ensemble','Planning','Animateurs','Utilisateurs','Émissions','Dons','Notifications','Paramètres'];
+  final icons = const [Icons.dashboard_outlined,Icons.calendar_month_outlined,Icons.mic_none_rounded,Icons.people_outline,Icons.play_circle_outline,Icons.favorite_border,Icons.notifications_none,Icons.settings_outlined];
+
+  @override
+  void initState(){super.initState(); index=widget.initialIndex;}
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+    appBar: AppBar(title: const Text('I24H Admin', style: TextStyle(fontWeight: FontWeight.w800)), actions: [IconButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notifications administrateur'))), icon: const Icon(Icons.notifications_none_rounded))]),
+    body: Row(children: [
+      if (MediaQuery.sizeOf(context).width >= 850) NavigationRail(selectedIndex: index, onDestinationSelected: (v)=>setState(()=>index=v), labelType: NavigationRailLabelType.all, leading: const Padding(padding: EdgeInsets.symmetric(vertical: 18), child: Icon(Icons.admin_panel_settings_outlined, color: AppColors.navy)), destinations: List.generate(labels.length,(i)=>NavigationRailDestination(icon: Icon(icons[i]), selectedIcon: Icon(icons[i]), label: Text(labels[i])))),
+      Expanded(child: pages[index]),
+    ]),
+    bottomNavigationBar: MediaQuery.sizeOf(context).width < 850 ? NavigationBar(selectedIndex: index > 3 ? 0 : index, onDestinationSelected: (v)=>setState(()=>index=v), destinations: const [NavigationDestination(icon: Icon(Icons.dashboard_outlined), label:'Vue'),NavigationDestination(icon: Icon(Icons.calendar_month_outlined), label:'Planning'),NavigationDestination(icon: Icon(Icons.mic_none_rounded), label:'Équipe'),NavigationDestination(icon: Icon(Icons.settings_outlined), label:'Plus')]) : null,
+  );
+}
