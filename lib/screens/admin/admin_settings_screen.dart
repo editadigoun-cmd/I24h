@@ -1,0 +1,9 @@
+import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_widgets.dart';
+
+class AdminSettingsScreen extends StatefulWidget {
+  const AdminSettingsScreen({super.key});
+  @override State<AdminSettingsScreen> createState()=>_AdminSettingsScreenState();
+}
+class _AdminSettingsScreenState extends State<AdminSettingsScreen>{bool notifications=true;bool maintenance=false;@override Widget build(BuildContext context)=>ListView(padding:const EdgeInsets.all(18),children:[const Text('Paramètres',style:TextStyle(fontSize:24,fontWeight:FontWeight.w800,color:AppColors.ink)),const SizedBox(height:16),I24HCard(child:Column(children:[SwitchListTile(contentPadding:EdgeInsets.zero,value:notifications,onChanged:(v)=>setState(()=>notifications=v),title:const Text('Notifications globales',style:TextStyle(fontWeight:FontWeight.w700)),subtitle:const Text('Autoriser les notifications de la plateforme')),const Divider(height:1),SwitchListTile(contentPadding:EdgeInsets.zero,value:maintenance,onChanged:(v)=>setState(()=>maintenance=v),title:const Text('Mode maintenance',style:TextStyle(fontWeight:FontWeight.w700)),subtitle:const Text('Suspendre temporairement la diffusion publique'))])),const SizedBox(height:14),I24HCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('Identité de la plateforme',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800)),const SizedBox(height:12),const TextField(decoration:InputDecoration(labelText:'Nom de la radio',hintText:'I24H')),const SizedBox(height:10),const TextField(decoration:InputDecoration(labelText:'Description')),const SizedBox(height:12),SizedBox(width:double.infinity,child:FilledButton(onPressed:()=>ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Paramètres enregistrés'))),child:const Text('Enregistrer')))]))]);}
