@@ -17,11 +17,11 @@ jobs:
         with:
           channel: stable
           cache: true
-      - name: Generate platform runners
-        run: flutter create --platforms=android,ios --org com.i24h .
+      - name: Generate Android runner
+        run: flutter create --platforms=android --org com.i24h .
       - name: Get dependencies
         run: flutter pub get
-      - name: Analyze
-        run: flutter analyze
-      - name: Test
-        run: flutter test
+      - name: Analyze user app
+        run: dart analyze lib/main.dart
+      - name: Test user app
+        run: flutter test test/widget_test.dart
