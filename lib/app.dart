@@ -11,7 +11,7 @@ class I24HApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'I24H',
+      title: 'I24H — Espace utilisateur',
       theme: AppTheme.light,
       initialRoute: '/',
       routes: {
