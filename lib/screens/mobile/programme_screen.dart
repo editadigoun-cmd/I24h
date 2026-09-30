@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
-import '../../core/widgets/app_widgets.dart';
 
 class ProgrammeScreen extends StatefulWidget {
   const ProgrammeScreen({super.key});
@@ -20,11 +19,17 @@ class _ProgrammeScreenState extends State<ProgrammeScreen> {
   ];
 
   @override
-  Widget build(BuildContext context) => Scaffold(appBar: AppBar(title: const Text('Programme', style: TextStyle(fontWeight: FontWeight.w800))), body: ListView(padding: const EdgeInsets.fromLTRB(18, 8, 18, 28), children: [
-    SizedBox(height: 42, child: ListView.separated(scrollDirection: Axis.horizontal, itemCount: days.length, separatorBuilder: (_, __) => const SizedBox(width: 8), itemBuilder: (_, i) => ChoiceChip(label: Text(days[i]), selected: day == i, onSelected: (_) => setState(() => day = i)))),
-    const SizedBox(height: 20),
-    const Text('Aujourd’hui à l’antenne', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: AppColors.ink)),
-    const SizedBox(height: 12),
-    ...shows.map((s) => Padding(padding: const EdgeInsets.only(bottom: 10), child: I24HCard(child: Row(children: [SizedBox(width: 54, child: Text(s.$1, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.navy))), const SizedBox(width: 12), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(s.$2, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink)), const SizedBox(height: 3), Text('${s.$3} · ${s.$4}', style: const TextStyle(fontSize: 12, color: AppColors.muted))])), IconButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Rappel activé pour ${s.$2}'))), icon: const Icon(Icons.notifications_none_rounded, color: AppColors.navy))]))),
-  ]));
+  Widget build(BuildContext context) {
+    return SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(20, 18, 20, 28), children: [
+      const Text('Programme', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
+      const SizedBox(height: 6),
+      const Text('Retrouvez les émissions de la journée.', style: TextStyle(color: AppColors.muted)),
+      const SizedBox(height: 20),
+      SizedBox(height: 42, child: ListView.separated(scrollDirection: Axis.horizontal, itemCount: days.length, separatorBuilder: (_, __) => const SizedBox(width: 8), itemBuilder: (_, i) => ChoiceChip(label: Text(days[i]), selected: day == i, onSelected: (_) => setState(() => day = i)))),
+      const SizedBox(height: 22),
+      const Text('Aujourd’hui à l’antenne', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
+      const SizedBox(height: 12),
+      ...shows.map((s) => Padding(padding: const EdgeInsets.only(bottom: 10), child: Card(child: Padding(padding: const EdgeInsets.all(15), child: Row(children: [Container(width: 58, height: 58, alignment: Alignment.center, decoration: BoxDecoration(color: AppColors.sky, borderRadius: BorderRadius.circular(14)), child: Text(s.$1, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.blue))), const SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(s.$2, style: const TextStyle(fontWeight: FontWeight.w800)), const SizedBox(height: 5), Text('${s.$3} · ${s.$4}', style: const TextStyle(fontSize: 12, color: AppColors.muted))])), IconButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Rappel activé pour ${s.$2}'))), icon: const Icon(Icons.notifications_none_rounded, color: AppColors.navy))])))),
+    ]));
+  }
 }
