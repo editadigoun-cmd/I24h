@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'core/theme/app_theme.dart';
+import 'screens/auth/onboarding_screen.dart';
+import 'screens/auth/login_screen.dart';
 import 'screens/mobile/user_app_screen.dart';
 
 class I24HApp extends StatelessWidget {
@@ -9,6 +11,11 @@ class I24HApp extends StatelessWidget {
     debugShowCheckedModeBanner: false,
     title: 'I24H',
     theme: AppTheme.light,
-    home: const UserAppScreen(),
+    initialRoute: '/',
+    routes: {
+      '/': (_) => const OnboardingScreen(),
+      '/login': (_) => const LoginScreen(),
+      '/mobile': (_) => const UserAppScreen(),
+    },
   );
 }
