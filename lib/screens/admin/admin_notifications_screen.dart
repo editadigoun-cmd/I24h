@@ -1,0 +1,8 @@
+import 'package:flutter/material.dart';
+import '../../core/theme/app_theme.dart';
+import '../../core/widgets/app_widgets.dart';
+
+class AdminNotificationsScreen extends StatelessWidget {
+  const AdminNotificationsScreen({super.key});
+  @override Widget build(BuildContext context)=>ListView(padding:const EdgeInsets.all(18),children:[const Text('Notifications',style:TextStyle(fontSize:24,fontWeight:FontWeight.w800,color:AppColors.ink)),const SizedBox(height:6),const Text('Pilotez les alertes envoyées à la communauté.',style:TextStyle(color:AppColors.muted)),const SizedBox(height:16),I24HCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[const Text('Nouvelle notification',style:TextStyle(fontSize:17,fontWeight:FontWeight.w800)),const SizedBox(height:12),const TextField(decoration:InputDecoration(labelText:'Titre')),const SizedBox(height:10),const TextField(maxLines:3,decoration:InputDecoration(labelText:'Message')),const SizedBox(height:12),SizedBox(width:double.infinity,child:FilledButton.icon(onPressed:()=>ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Notification envoyée'))),icon:const Icon(Icons.send_outlined),label:const Text('Envoyer')))])),const SizedBox(height:18),const SectionTitle(title:'Historique'),...['Programme de ce soir disponible','Nouveau replay disponible','Bienvenue dans la communauté'].map((x)=>Padding(padding:const EdgeInsets.only(bottom:9),child:I24HCard(child:Row(children:[const Icon(Icons.notifications_none,color:AppColors.navy),const SizedBox(width:12),Expanded(child:Text(x,style:const TextStyle(fontWeight:FontWeight.w700,color:AppColors.ink))),const Text('Envoyée',style:TextStyle(fontSize:11,color:AppColors.success,fontWeight:FontWeight.w700))]))))]);
+}
