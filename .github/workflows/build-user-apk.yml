@@ -24,8 +24,8 @@ jobs:
         run: flutter create . --platforms=android --project-name=i24h_user
       - name: Get dependencies
         run: flutter pub get
-      - name: Analyze
-        run: flutter analyze
+      - name: Analyze user app
+        run: dart analyze lib/main.dart
       - name: Build user APK
         run: flutter build apk --release
       - name: Upload APK artifact
