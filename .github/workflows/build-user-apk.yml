@@ -1,4 +1,4 @@
-name: Build I24H User APK
+name: Build I24H Android and Web
 
 on:
   workflow_dispatch:
@@ -7,7 +7,10 @@ on:
       - 'lib/**'
       - 'assets/**'
       - 'pubspec.yaml'
-      - '.github/workflows/build-user-apk.yml'
+      - '.github/workflows/**'
+
+permissions:
+  contents: read
 
 jobs:
   build:
@@ -20,17 +23,27 @@ jobs:
         with:
           channel: stable
           cache: true
-      - name: Create native Android project if missing
-        run: flutter create . --platforms=android --project-name=i24h_user
+      - name: Create missing Flutter platforms
+        run: flutter create . --platforms=android,web --project-name=i24h
       - name: Get dependencies
         run: flutter pub get
-      - name: Analyze user app
-        run: dart analyze lib/main.dart
-      - name: Build user APK
-        run: flutter build apk --release
-      - name: Upload APK artifact
+      - name: Analyze
+        run: dart analyze lib
+      - name: Test
+        run: flutter test
+      - name: Build Android APK
+        run: flutter build apk --release --build-name=1.0.1 --build-number=${{ github.run_number }}
+      - name: Build Web
+        run: flutter build web --release
+      - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: i24h-user-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+      - name: Upload Web
+        uses: actions/upload-artifact@v4
+        with:
+          name: i24h-web-release
+          path: build/web
           if-no-files-found: error
