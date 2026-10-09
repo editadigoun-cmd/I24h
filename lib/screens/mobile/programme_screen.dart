@@ -3,12 +3,14 @@ import '../../core/theme/app_theme.dart';
 
 class ProgrammeScreen extends StatefulWidget {
   const ProgrammeScreen({super.key});
+
   @override
   State<ProgrammeScreen> createState() => _ProgrammeScreenState();
 }
 
 class _ProgrammeScreenState extends State<ProgrammeScreen> {
   int day = 0;
+
   final days = const ['Aujourd’hui', 'Demain', 'Vendredi'];
   final shows = const [
     ('06:00', 'Réveil du Matin', '06:00 — 09:00', 'Edith A.'),
@@ -20,16 +22,100 @@ class _ProgrammeScreenState extends State<ProgrammeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(child: ListView(padding: const EdgeInsets.fromLTRB(20, 18, 20, 28), children: [
-      const Text('Programme', style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800)),
-      const SizedBox(height: 6),
-      const Text('Retrouvez les émissions de la journée.', style: TextStyle(color: AppColors.muted)),
-      const SizedBox(height: 20),
-      SizedBox(height: 42, child: ListView.separated(scrollDirection: Axis.horizontal, itemCount: days.length, separatorBuilder: (_, __) => const SizedBox(width: 8), itemBuilder: (_, i) => ChoiceChip(label: Text(days[i]), selected: day == i, onSelected: (_) => setState(() => day = i)))),
-      const SizedBox(height: 22),
-      const Text('Aujourd’hui à l’antenne', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
-      const SizedBox(height: 12),
-      ...shows.map((s) => Padding(padding: const EdgeInsets.only(bottom: 10), child: Card(child: Padding(padding: const EdgeInsets.all(15), child: Row(children: [Container(width: 58, height: 58, alignment: Alignment.center, decoration: BoxDecoration(color: AppColors.sky, borderRadius: BorderRadius.circular(14)), child: Text(s.$1, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.blue))), const SizedBox(width: 14), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(s.$2, style: const TextStyle(fontWeight: FontWeight.w800)), const SizedBox(height: 5), Text('${s.$3} · ${s.$4}', style: const TextStyle(fontSize: 12, color: AppColors.muted))])), IconButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Rappel activé pour ${s.$2}'))), icon: const Icon(Icons.notifications_none_rounded, color: AppColors.navy))])))),
-    ]));
+    return SafeArea(
+      child: ListView(
+        padding: const EdgeInsets.fromLTRB(20, 18, 20, 28),
+        children: [
+          const Text(
+            'Programme',
+            style: TextStyle(fontSize: 28, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Retrouvez les émissions de la journée.',
+            style: TextStyle(color: AppColors.muted),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 42,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: days.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 8),
+              itemBuilder: (context, index) => ChoiceChip(
+                label: Text(days[index]),
+                selected: day == index,
+                onSelected: (_) => setState(() => day = index),
+              ),
+            ),
+          ),
+          const SizedBox(height: 22),
+          Text(
+            day == 0 ? 'Aujourd’hui à l’antenne' : 'Programme — ${days[day]}',
+            style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+          ),
+          const SizedBox(height: 12),
+          ...shows.map(
+            (show) => Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(15),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 58,
+                        height: 58,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.sky,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          show.$1,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.blue,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              show.$2,
+                              style: const TextStyle(fontWeight: FontWeight.w800),
+                            ),
+                            const SizedBox(height: 5),
+                            Text(
+                              '${show.$3} · ${show.$4}',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppColors.muted,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Rappel activé pour ${show.$2}')),
+                        ),
+                        icon: const Icon(
+                          Icons.notifications_none_rounded,
+                          color: AppColors.navy,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 }
