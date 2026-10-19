@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../core/theme/app_theme.dart';
+import 'home_screen.dart';
+import 'live_player_screen.dart';
 
 class UserAppScreen extends StatefulWidget {
   const UserAppScreen({super.key});
@@ -16,9 +18,9 @@ class _UserAppScreenState extends State<UserAppScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = [_home(), _program(), _replay(), _intentions(), _profile(context)];
+    final pages = [const HomeScreen(), _program(), _replay(), _intentions(), _profile(context)];
     return Scaffold(
-      appBar: AppBar(
+      appBar: tab == 0 ? null : AppBar(
         title: Text(titles[tab], style: const TextStyle(fontWeight: FontWeight.w800)),
         actions: [
           IconButton(
@@ -157,7 +159,7 @@ class _UserAppScreenState extends State<UserAppScreen> {
                     child: ListTile(
                       title: Text(x, style: const TextStyle(fontWeight: FontWeight.w800)),
                       subtitle: const Text('Disponible à la réécoute'),
-                      trailing: IconButton(onPressed: () => _snack('Lecture lancée'), icon: const Icon(Icons.play_circle_fill_rounded, color: AppColors.blue)),
+                      trailing: IconButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => LivePlayerScreen(title: x, subtitle: 'Réécoute I24H', isLive: false))), icon: const Icon(Icons.play_circle_fill_rounded, color: AppColors.blue)),
                     ),
                   )),
         ],
