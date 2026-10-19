@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import '../../core/config/i24h_config.dart';
 import '../../core/theme/app_theme.dart';
 import 'home_screen.dart';
 import 'live_player_screen.dart';
@@ -149,21 +152,74 @@ class _UserAppScreenState extends State<UserAppScreen> {
         ],
       );
 
-  Widget _replay() => ListView(
-        padding: const EdgeInsets.all(20),
-        children: [
-          const Text('Replay', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 18),
-          ...['La matinale I24H', 'Parole & communauté', 'Temps de prière', 'Veillée I24H']
-              .map((x) => Card(
-                    child: ListTile(
-                      title: Text(x, style: const TextStyle(fontWeight: FontWeight.w800)),
-                      subtitle: const Text('Disponible à la réécoute'),
-                      trailing: IconButton(onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => LivePlayerScreen(title: x, subtitle: 'Réécoute I24H', isLive: false))), icon: const Icon(Icons.play_circle_fill_rounded, color: AppColors.blue)),
-                    ),
-                  )),
-        ],
-      );
+  Widget _replay() {
+    final rawCatalog = I24HConfig.replayCatalogJson.trim();
+    List<Map<String, String>> items = [];
+
+    if (rawCatalog.isNotEmpty) {
+      try {
+        final decoded = jsonDecode(rawCatalog);
+        if (decoded is List) {
+          items = decoded.whereType<Map>().map((entry) => {
+            'title': (entry['title'] ?? '').toString(),
+            'subtitle': (entry['subtitle'] ?? 'Replay I24H').toString(),
+            'url': (entry['url'] ?? '').toString(),
+          }).where((entry) => entry['title']!.trim().isNotEmpty).toList();
+        }
+      } on FormatException {
+        items = [];
+      }
+    }
+
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        const Text('Replay', style: TextStyle(fontSize: 25, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 8),
+        const Text('Réécoutez les émissions et enseignements I24H.', style: TextStyle(color: AppColors.muted)),
+        const SizedBox(height: 18),
+        if (items.isEmpty)
+          const Card(
+            child: Padding(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                children: [
+                  Icon(Icons.library_music_outlined, size: 38, color: AppColors.blue),
+                  SizedBox(height: 12),
+                  Text('Le catalogue Replay arrive bientôt', textAlign: TextAlign.center, style: TextStyle(fontWeight: FontWeight.w800)),
+                  SizedBox(height: 6),
+                  Text('Les émissions apparaîtront ici lorsque leurs fichiers audio seront configurés.', textAlign: TextAlign.center, style: TextStyle(color: AppColors.muted, height: 1.4)),
+                ],
+              ),
+            ),
+          )
+        else
+          ...items.map((item) => Card(
+            child: ListTile(
+              leading: Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(color: AppColors.sky, borderRadius: BorderRadius.circular(14)),
+                child: const Icon(Icons.graphic_eq_rounded, color: AppColors.blue),
+              ),
+              title: Text(item['title']!, style: const TextStyle(fontWeight: FontWeight.w800)),
+              subtitle: Text(item['subtitle']!),
+              trailing: IconButton(
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+                  builder: (_) => LivePlayerScreen(
+                    title: item['title']!,
+                    subtitle: item['subtitle']!,
+                    isLive: false,
+                    audioUrl: item['url'],
+                  ),
+                )),
+                icon: const Icon(Icons.play_circle_fill_rounded, color: AppColors.blue, size: 30),
+              ),
+            ),
+          )),
+      ],
+    );
+  }
 
   Widget _intentions() => ListView(
         padding: const EdgeInsets.all(20),
