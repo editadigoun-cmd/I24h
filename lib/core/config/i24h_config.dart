@@ -1,22 +1,34 @@
-/// Runtime configuration for the I24H mobile app.
+/// Public build-time configuration for the I24H mobile application.
 ///
-/// Live stream:
-/// flutter run --dart-define=I24H_LIVE_STREAM_URL=https://radio.example.com/live.mp3
-///
-/// Optional replay catalog JSON, each item has title, subtitle and url:
-/// --dart-define='I24H_REPLAY_CATALOG_JSON=[{"title":"Émission","subtitle":"Durée · date","url":"https://.../episode.mp3"}]'
-///
-/// These values are bundled into the application. Never place secret credentials here.
+/// Pass the Supabase project URL and publishable key with --dart-define.
+/// Publishable keys are intended for client applications; never put a
+/// Supabase service-role key or payment-provider secret in the mobile app.
 class I24HConfig {
   I24HConfig._();
+
+  static const String supabaseUrl = String.fromEnvironment(
+    'I24H_SUPABASE_URL',
+    defaultValue: '',
+  );
+
+  static const String supabasePublishableKey = String.fromEnvironment(
+    'I24H_SUPABASE_PUBLISHABLE_KEY',
+    defaultValue: '',
+  );
 
   static const String liveStreamUrl = String.fromEnvironment(
     'I24H_LIVE_STREAM_URL',
     defaultValue: '',
   );
 
+  /// Retained for local/manual media testing only. Production replays should
+  /// be loaded from the database, not embedded in the application binary.
   static const String replayCatalogJson = String.fromEnvironment(
     'I24H_REPLAY_CATALOG_JSON',
     defaultValue: '',
   );
+
+  static bool get hasSupabaseConfig =>
+      supabaseUrl.startsWith('https://') &&
+      supabasePublishableKey.isNotEmpty;
 }
