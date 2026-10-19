@@ -93,6 +93,12 @@ create index if not exists prayer_intentions_user_created_idx
 create index if not exists donations_user_created_idx
   on public.donations (user_id, created_at desc);
 
+-- Explicit Data API grants for the client roles used by the Flutter app.
+grant select on public.profiles to authenticated;
+grant select on public.programs, public.replay_items to authenticated;
+grant select, insert on public.prayer_intentions to authenticated;
+grant select on public.donations to authenticated;
+
 alter table public.profiles enable row level security;
 alter table public.programs enable row level security;
 alter table public.replay_items enable row level security;
