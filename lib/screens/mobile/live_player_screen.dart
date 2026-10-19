@@ -1,16 +1,23 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:just_audio/just_audio.dart';
+
+import '../../core/config/i24h_config.dart';
 import '../../core/theme/app_theme.dart';
 
 class LivePlayerScreen extends StatefulWidget {
   final String title;
   final String subtitle;
   final bool isLive;
+  final String? audioUrl;
 
   const LivePlayerScreen({
     super.key,
     this.title = 'I24H — La radio en continu',
     this.subtitle = 'La voix qui vous accompagne',
     this.isLive = true,
+    this.audioUrl,
   });
 
   @override
@@ -18,7 +25,66 @@ class LivePlayerScreen extends StatefulWidget {
 }
 
 class _LivePlayerScreenState extends State<LivePlayerScreen> {
-  bool playing = false;
+  late final AudioPlayer _player;
+  bool _loading = false;
+  String? _errorMessage;
+
+  String get _sourceUrl {
+    if (widget.audioUrl != null && widget.audioUrl!.trim().isNotEmpty) {
+      return widget.audioUrl!.trim();
+    }
+    return widget.isLive ? I24HConfig.liveStreamUrl.trim() : '';
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _player = AudioPlayer();
+  }
+
+  @override
+  void dispose() {
+    unawaited(_player.dispose());
+    super.dispose();
+  }
+
+  Future<void> _togglePlayback() async {
+    if (_loading) return;
+
+    if (_player.playing) {
+      await _player.pause();
+      return;
+    }
+
+    if (_sourceUrl.isEmpty) {
+      setState(() {
+        _errorMessage = widget.isLive
+            ? 'Le direct audio n’est pas encore configuré. Ajoutez I24H_LIVE_STREAM_URL au lancement.'
+            : 'Le fichier audio de ce replay n’est pas encore disponible.';
+      });
+      return;
+    }
+
+    setState(() {
+      _loading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      if (_player.audioSource == null) {
+        await _player.setUrl(_sourceUrl);
+      }
+      unawaited(_player.play());
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Impossible de lire cet audio. Vérifiez la connexion ou réessayez.';
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -70,7 +136,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       gradient: const LinearGradient(colors: [Color(0xFF244F83), Color(0xFF0D2341)], begin: Alignment.topLeft, end: Alignment.bottomRight),
-                      border: Border.all(color: Colors.white.withOpacity(0.12), width: 1),
+                      border: Border.all(color: Colors.white12, width: 1),
                     ),
                     child: const Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -110,7 +176,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: List.generate(25, (index) {
-                  final heights = [10, 18, 28, 16, 35, 22, 42, 25, 15, 31, 45, 20, 34, 13, 26, 39, 17, 29, 44, 20, 32, 14, 25, 37, 18];
+                  const heights = [10, 18, 28, 16, 35, 22, 42, 25, 15, 31, 45, 20, 34, 13, 26, 39, 17, 29, 44, 20, 32, 14, 25, 37, 18];
                   return Container(
                     width: 4,
                     height: heights[index].toDouble(),
@@ -126,23 +192,36 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     IconButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Le minuteur sera ajouté prochainement.'))), icon: const Icon(Icons.bedtime_outlined, color: Colors.white70, size: 25)),
-                    Container(
-                      width: 76,
-                      height: 76,
-                      decoration: const BoxDecoration(color: AppColors.gold, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Color(0x44C89B3C), blurRadius: 20, spreadRadius: 2)]),
-                      child: IconButton(
-                        onPressed: () => setState(() => playing = !playing),
-                        icon: Icon(playing ? Icons.pause_rounded : Icons.play_arrow_rounded, color: AppColors.navy, size: 40),
-                      ),
+                    StreamBuilder<PlayerState>(
+                      stream: _player.playerStateStream,
+                      builder: (context, snapshot) {
+                        final isPlaying = snapshot.data?.playing ?? false;
+                        return Container(
+                          width: 76,
+                          height: 76,
+                          decoration: const BoxDecoration(color: AppColors.gold, shape: BoxShape.circle, boxShadow: [BoxShadow(color: Color(0x44C89B3C), blurRadius: 20, spreadRadius: 2)]),
+                          child: IconButton(
+                            onPressed: _togglePlayback,
+                            icon: _loading
+                                ? const SizedBox(width: 28, height: 28, child: CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.navy))
+                                : Icon(isPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded, color: AppColors.navy, size: 40),
+                          ),
+                        );
+                      },
                     ),
-                    IconButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Le réglage audio sera disponible avec le flux réel.'))), icon: const Icon(Icons.tune_rounded, color: Colors.white70, size: 25)),
+                    IconButton(onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Le réglage audio sera disponible dans une prochaine version.'))), icon: const Icon(Icons.tune_rounded, color: Colors.white70, size: 25)),
                   ],
                 ),
               ),
-              const SizedBox(height: 22),
+              if (_errorMessage != null)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(26, 12, 26, 0),
+                  child: Text(_errorMessage!, textAlign: TextAlign.center, style: const TextStyle(color: Color(0xFFFFD5D5), fontSize: 11, height: 1.4)),
+                ),
+              const SizedBox(height: 18),
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 30),
-                child: Text('Le flux audio sera connecté à cette interface lors de l’intégration technique.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF9FB2CB), fontSize: 11, height: 1.45)),
+                child: Text('Lecture audio via le flux configuré pour I24H.', textAlign: TextAlign.center, style: TextStyle(color: Color(0xFF9FB2CB), fontSize: 11, height: 1.45)),
               ),
               const Spacer(),
             ],
