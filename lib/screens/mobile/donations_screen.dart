@@ -105,7 +105,7 @@ class DonationsScreen extends StatelessWidget {
                       onPressed: () {
                         Navigator.pop(sheetContext);
                         ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(content: Text('Don de $amount FCFA sélectionné')),
+                          SnackBar(content: Text('Montant de $amount FCFA choisi. Le paiement sera activé après configuration du fournisseur I24H.')),
                         );
                       },
                       child: Text('$amount FCFA'),
