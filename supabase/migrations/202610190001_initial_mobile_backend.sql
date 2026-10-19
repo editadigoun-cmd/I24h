@@ -157,9 +157,69 @@ values ('i24h-replays', 'i24h-replays', false)
 on conflict (id) do nothing;
 
 drop policy if exists "Authenticated users can read replay media" on storage.objects;
-create policy "Authenticated users can read replay media"
+create policy "Authenticated users can read published replay media"
   on storage.objects for select to authenticated
-  using (bucket_id = 'i24h-replays');
+  using (
+    bucket_id = 'i24h-replays'
+    and exists (
+      select 1 from public.replay_items r
+      where r.media_path = storage.objects.name
+        and r.is_published = true
+    )
+  );
 
 -- Do not add a client upload policy for this bucket. Admin uploads should be
 -- performed by a trusted server or a future role-checked Edge Function.
+
+
+-- Keep the auth trigger function unavailable as a public RPC endpoint.
+revoke execute on function public.handle_new_user() from public, anon, authenticated;
+
+-- Per-user notification preferences for future push/reminder features.
+create table if not exists public.user_notification_preferences (
+  user_id uuid primary key references auth.users(id) on delete cascade,
+  prayer_updates boolean not null default true,
+  program_reminders boolean not null default true,
+  donation_updates boolean not null default true,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.user_notification_preferences enable row level security;
+grant select, insert, update on public.user_notification_preferences to authenticated;
+create policy "Users manage own notification preferences"
+  on public.user_notification_preferences for all to authenticated
+  using (user_id = (select auth.uid()))
+  with check (user_id = (select auth.uid()));
+
+-- Devices are scoped to their owner; push tokens are never publicly readable.
+create table if not exists public.user_devices (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  platform text not null check (platform in ('android', 'ios')),
+  push_token text not null unique,
+  last_seen_at timestamptz not null default now(),
+  created_at timestamptz not null default now()
+);
+create index if not exists user_devices_user_idx on public.user_devices (user_id);
+alter table public.user_devices enable row level security;
+grant select, insert, update, delete on public.user_devices to authenticated;
+create policy "Users manage own devices"
+  on public.user_devices for all to authenticated
+  using (user_id = (select auth.uid()))
+  with check (user_id = (select auth.uid()));
+
+-- Provider webhook/event ledger. Only trusted server-side code should access it.
+create table if not exists public.donation_payment_events (
+  id uuid primary key default gen_random_uuid(),
+  donation_id uuid references public.donations(id) on delete set null,
+  provider text not null check (provider in ('kkiapay', 'fedapay', 'cinetpay', 'other')),
+  provider_event_id text not null,
+  event_type text not null,
+  payload jsonb not null default '{}'::jsonb,
+  received_at timestamptz not null default now(),
+  unique (provider, provider_event_id)
+);
+create index if not exists donation_payment_events_donation_idx
+  on public.donation_payment_events (donation_id);
+alter table public.donation_payment_events enable row level security;
+revoke all on table public.donation_payment_events from anon, authenticated;
