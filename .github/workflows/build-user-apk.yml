@@ -1,4 +1,4 @@
-name: Build I24H Android and Web
+name: Build I24H Mobile
 
 on:
   workflow_dispatch:
@@ -7,13 +7,21 @@ on:
       - 'lib/**'
       - 'assets/**'
       - 'pubspec.yaml'
+      - 'supabase/**'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'lib/**'
+      - 'assets/**'
+      - 'pubspec.yaml'
+      - 'supabase/**'
       - '.github/workflows/**'
 
 permissions:
   contents: read
 
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,7 +31,7 @@ jobs:
         with:
           channel: stable
           cache: true
-      - name: Create missing Flutter platforms
+      - name: Create Android and web platform files if missing
         run: flutter create . --platforms=android,web --project-name=i24h
       - name: Get dependencies
         run: flutter pub get
@@ -46,4 +54,31 @@ jobs:
         with:
           name: i24h-web-release
           path: build/web
+          if-no-files-found: error
+
+  build-ios:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Create iOS platform files if missing
+        run: flutter create . --platforms=ios --project-name=i24h
+      - name: Get dependencies
+        run: flutter pub get
+      - name: Analyze
+        run: dart analyze lib
+      - name: Test
+        run: flutter test
+      - name: Build iOS without signing
+        run: flutter build ios --release --no-codesign
+      - name: Upload iOS app bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: i24h-ios-release-unsigned
+          path: build/ios/iphoneos/Runner.app
           if-no-files-found: error
