@@ -28,6 +28,8 @@ class I24HConfig {
     defaultValue: '',
   );
 
+  static bool backendReady = false;
+
   static bool get hasSupabaseConfig =>
       supabaseUrl.startsWith('https://') &&
       supabasePublishableKey.isNotEmpty;
