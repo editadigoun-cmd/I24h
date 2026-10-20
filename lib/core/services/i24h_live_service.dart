@@ -7,7 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Connects authenticated I24H users to the private LiveKit room.
 /// The LiveKit API secret stays on Cloudflare and is never shipped in the app.
 class I24HLiveService {
-  I24HLiveService._();
+  I24HLiveService();
 
   static const String tokenEndpoint =
       'https://i24h.ccds22431.workers.dev/api/livekit/token';
