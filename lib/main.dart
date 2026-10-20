@@ -7,17 +7,22 @@ import 'core/config/i24h_config.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  if (I24HConfig.hasSupabaseConfig) {
+  if (!I24HConfig.hasSupabaseConfig) {
+    I24HConfig.backendError =
+        'Configuration Supabase absente ou invalide dans cette version de l’application.';
+  } else {
     try {
       await Supabase.initialize(
         url: I24HConfig.supabaseUrl,
         publishableKey: I24HConfig.supabasePublishableKey,
       );
       I24HConfig.backendReady = true;
-    } catch (error) {
-      // Keep the app launchable so the login screen can explain that backend
-      // configuration needs attention. Do not silently grant access.
+      I24HConfig.backendError = null;
+    } catch (error, stackTrace) {
+      I24HConfig.backendReady = false;
+      I24HConfig.backendError = error.toString();
       debugPrint('I24H backend initialization failed: $error');
+      debugPrintStack(stackTrace: stackTrace);
     }
   }
 
