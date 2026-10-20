@@ -11,6 +11,18 @@ class I24HBackend {
 
   static SupabaseClient get _client => Supabase.instance.client;
 
+  /// Performs a real request to the Supabase Data API. This is different from
+  /// merely checking that the SDK was initialized with a URL and key.
+  static Future<void> checkConnection() async {
+    if (!isReady) {
+      throw StateError(
+        I24HConfig.backendError ??
+            'Supabase n’est pas initialisé dans cette version de l’application.',
+      );
+    }
+    await _client.from('programs').select('id').limit(1);
+  }
+
   static Future<List<Map<String, dynamic>>> publishedPrograms() async {
     if (!isReady) return [];
     final rows = await _client
@@ -43,7 +55,9 @@ class I24HBackend {
   static Future<List<Map<String, dynamic>>> myPrayerIntentions() async {
     if (!isReady) return [];
     final user = _client.auth.currentUser;
-    if (user == null) throw StateError('Connectez-vous pour consulter vos intentions.');
+    if (user == null) {
+      throw StateError('Connectez-vous pour consulter vos intentions.');
+    }
     final rows = await _client
         .from('prayer_intentions')
         .select('id,message,status,created_at')
@@ -57,10 +71,14 @@ class I24HBackend {
       throw StateError('Le backend I24H n’est pas configuré.');
     }
     final user = _client.auth.currentUser;
-    if (user == null) throw StateError('Connectez-vous pour envoyer une intention.');
+    if (user == null) {
+      throw StateError('Connectez-vous pour envoyer une intention.');
+    }
     final trimmed = message.trim();
     if (trimmed.length < 3 || trimmed.length > 3000) {
-      throw ArgumentError('Votre intention doit contenir entre 3 et 3000 caractères.');
+      throw ArgumentError(
+        'Votre intention doit contenir entre 3 et 3000 caractères.',
+      );
     }
     await _client.from('prayer_intentions').insert({
       'user_id': user.id,
