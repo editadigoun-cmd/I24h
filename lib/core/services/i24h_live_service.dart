@@ -4,8 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:livekit_client/livekit_client.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Connects authenticated I24H users to the private LiveKit room.
-/// The LiveKit API secret stays on Cloudflare and is never shipped in the app.
+/// Connects authenticated I24H users to LiveKit. API secrets remain server-side.
 class I24HLiveService {
   I24HLiveService();
 
@@ -16,7 +15,11 @@ class I24HLiveService {
   bool get isConnected => _room != null;
   Room? get room => _room;
 
-  Future<Room> connect({required String participantName, required bool publishAudio}) async {
+  Future<Room> connect({
+    required String participantName,
+    required bool publishAudio,
+    String? invitationCode,
+  }) async {
     if (_room != null) return _room!;
 
     final session = Supabase.instance.client.auth.currentSession;
@@ -30,7 +33,11 @@ class I24HLiveService {
         'Authorization': 'Bearer ${session.accessToken}',
         'Content-Type': 'application/json',
       },
-      body: jsonEncode({'participant_name': participantName}),
+      body: jsonEncode({
+        'participant_name': participantName,
+        if (invitationCode != null && invitationCode.trim().isNotEmpty)
+          'invitation_code': invitationCode.trim(),
+      }),
     ).timeout(const Duration(seconds: 20));
 
     if (response.statusCode < 200 || response.statusCode >= 300) {
@@ -54,7 +61,7 @@ class I24HLiveService {
     final room = Room();
     try {
       await room.connect(serverUrl, token);
-      if (publishAudio) {
+      if (publishAudio || invitationCode != null) {
         await room.localParticipant?.setMicrophoneEnabled(true);
       } else {
         await room.startAudio();
@@ -81,9 +88,7 @@ class I24HLiveService {
 
   Future<void> setMicrophoneEnabled(bool enabled) async {
     final participant = _room?.localParticipant;
-    if (participant == null) {
-      throw StateError('Le studio n’est pas connecté.');
-    }
+    if (participant == null) throw StateError('Le studio n’est pas connecté.');
     await participant.setMicrophoneEnabled(enabled);
   }
 
