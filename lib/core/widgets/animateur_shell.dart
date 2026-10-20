@@ -36,9 +36,22 @@ class _AnimateurShellState extends State<AnimateurShell> {
           ]),
         ]),
         actions: [
-          if (wide) Container(margin: const EdgeInsets.symmetric(vertical: 18), padding: const EdgeInsets.symmetric(horizontal: 12), decoration: BoxDecoration(color: const Color(0xFFF1F5FC), borderRadius: BorderRadius.circular(12)), child: const Row(children: [Icon(Icons.circle, color: AppColors.success, size: 9), SizedBox(width: 8), Text('Studio prêt', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: AppColors.ink))])),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+            child: FilledButton.icon(
+              onPressed: () => setState(() => index = 1),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF19A974),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: wide ? 16 : 10),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Icons.sensors_rounded, size: 19),
+              label: Text(wide ? 'Démarrer le live' : 'Live', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+            ),
+          ),
           IconButton(tooltip: 'Notifications', onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Les notifications seront reliées au compte animateur.'))), icon: const Icon(Icons.notifications_none_rounded)),
-          const Padding(padding: EdgeInsets.only(left: 4, right: 18), child: CircleAvatar(backgroundColor: AppColors.sky, child: Icon(Icons.mic_rounded, color: AppColors.blue))),
+          const Padding(padding: EdgeInsets.only(left: 2, right: 10), child: CircleAvatar(backgroundColor: AppColors.sky, child: Icon(Icons.mic_rounded, color: AppColors.blue))),
         ],
       ),
       body: Row(children: [
