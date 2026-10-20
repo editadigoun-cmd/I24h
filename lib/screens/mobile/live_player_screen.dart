@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:video_player/video_player.dart';
+import 'package:livekit_client/livekit_client.dart';
 
 import '../../core/config/i24h_config.dart';
 import '../../core/services/i24h_live_service.dart';
@@ -34,6 +35,8 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   bool _playing = false;
   String? _errorMessage;
   final I24HLiveService _liveService = I24HLiveService();
+  EventsListener<RoomEvent>? _roomListener;
+  VideoTrack? _remoteVideoTrack;
 
   String get _videoUrl => widget.isLive ? I24HConfig.liveVideoUrl.trim() : '';
 
@@ -94,6 +97,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
 
   @override
   void dispose() {
+    unawaited(_roomListener?.dispose());
     unawaited(_liveService.disconnect());
     unawaited(_audioPlayer.dispose());
     final controller = _videoController;
@@ -109,10 +113,22 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
       setState(() => _loading = true);
       try {
         if (_liveService.isConnected) {
+          await _roomListener?.dispose();
+          _roomListener = null;
           await _liveService.disconnect();
-          if (mounted) setState(() => _playing = false);
+          if (mounted) setState(() { _playing = false; _remoteVideoTrack = null; });
         } else {
-          await _liveService.connect(participantName: 'Auditeur I24H', publishAudio: false);
+          final room = await _liveService.connect(participantName: 'Auditeur I24H', publishAudio: false);
+          final listener = room.createListener();
+          listener.on<TrackSubscribedEvent>((event) {
+            if (event.track is VideoTrack && mounted) {
+              setState(() => _remoteVideoTrack = event.track as VideoTrack);
+            }
+          });
+          listener.on<TrackUnsubscribedEvent>((event) {
+            if (event.track is VideoTrack && mounted) setState(() => _remoteVideoTrack = null);
+          });
+          _roomListener = listener;
           if (mounted) setState(() => _playing = true);
         }
       } catch (error) {
@@ -293,7 +309,9 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
-                          if (isVideoAvailable)
+                          if (_remoteVideoTrack != null && widget.isLive && !_audioOnly)
+                            VideoTrackRenderer(_remoteVideoTrack!, fit: VideoViewFit.cover)
+                          else if (isVideoAvailable)
                             VideoPlayer(_videoController!)
                           else
                             _VideoPlaceholder(
