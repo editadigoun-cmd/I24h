@@ -38,21 +38,18 @@ jobs:
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          import re
 
           manifest = Path("android/app/src/main/AndroidManifest.xml")
-          if not manifest.exists():
-              raise SystemExit(f"Android manifest not found: {manifest}")
-
-          text = manifest.read_text()
+          lines = manifest.read_text().splitlines()
           permission = 'android.permission.INTERNET'
-          if permission not in text:
-              match = re.search(r'<manifest\\b[^>]*>', text)
-              if not match:
+          if not any(permission in line for line in lines):
+              for index, line in enumerate(lines):
+                  if '<manifest' in line:
+                      lines.insert(index + 1, '    <uses-permission android:name="android.permission.INTERNET"/>')
+                      break
+              else:
                   raise SystemExit("Could not find the <manifest> tag.")
-              insertion = '\\n    <uses-permission android:name="android.permission.INTERNET"/>'
-              text = text[:match.end()] + insertion + text[match.end():]
-              manifest.write_text(text)
+              manifest.write_text("\\n".join(lines) + "\\n")
           print("Verified Android INTERNET permission.")
           PY
       - name: Get dependencies
