@@ -129,7 +129,15 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
             if (event.track is VideoTrack && mounted) setState(() => _remoteVideoTrack = null);
           });
           _roomListener = listener;
-          if (mounted) setState(() => _playing = true);
+          VideoTrack? existingVideo;
+          for (final participant in room.remoteParticipants.values) {
+            for (final publication in participant.videoTrackPublications) {
+              final track = publication.track;
+              if (track is VideoTrack) { existingVideo = track; break; }
+            }
+            if (existingVideo != null) break;
+          }
+          if (mounted) setState(() { _playing = true; _remoteVideoTrack = existingVideo; });
         }
       } catch (error) {
         if (mounted) setState(() { _playing = false; _errorMessage = error.toString().replaceFirst('Bad state: ', ''); });
