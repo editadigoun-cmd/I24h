@@ -2,7 +2,7 @@ name: I24H Flutter CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, feature/i24h-premium-home-player]
   pull_request:
     branches: [main]
 
@@ -21,10 +21,12 @@ jobs:
           channel: stable
           cache: true
       - name: Generate Android runner
-        run: flutter create --platforms=android,web --org com.i24h .
+        run: flutter create --platforms=android,ios,web --org com.i24h .
       - name: Get dependencies
         run: flutter pub get
       - name: Analyze user app
-        run: dart analyze lib/main.dart
+        run: dart analyze lib
+      - name: Add Android microphone permission
+        run: sed -i '/<application/i\\    <uses-permission android:name="android.permission.RECORD_AUDIO" />' android/app/src/main/AndroidManifest.xml
       - name: Build Flutter Web for Cloudflare
         run: flutter build web --release
