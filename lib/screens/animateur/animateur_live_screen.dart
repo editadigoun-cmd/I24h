@@ -22,16 +22,69 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
   final guests = <Map<String, dynamic>>[
     {'name': 'Invité de démonstration', 'role': 'Invité', 'mic': false, 'camera': false},
   ];
-  final intentions = [
-    ('Prière pour la famille', 'Il y a 4 min', 'À prendre en charge'),
-    ('Prière pour la guérison', 'Il y a 12 min', 'En prière'),
-    ('Prière pour le travail', 'Il y a 21 min', 'À prendre en charge'),
-  ];
-  final donations = [
-    ('Donateur anonyme', '5 000 FCFA', 'Il y a 2 min'),
-    ('Membre I24H', '10 000 FCFA', 'Il y a 8 min'),
-    ('Donateur anonyme', '2 500 FCFA', 'Il y a 16 min'),
-  ];
+  List<Map<String, dynamic>> intentions = [];
+  List<Map<String, dynamic>> donations = [];
+  bool activitiesLoading = false;
+  String? activitiesError;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadActivities();
+  }
+
+  Future<void> _loadActivities() async {
+    if (!mounted) return;
+    setState(() { activitiesLoading = true; activitiesError = null; });
+    try {
+      final supabase = Supabase.instance.client;
+      final intentionRows = await supabase
+          .from('prayer_intentions')
+          .select('id, message, status, created_at, is_private')
+          .order('created_at', ascending: false)
+          .limit(8);
+      List<Map<String, dynamic>> donationRows = [];
+      try {
+        final rows = await supabase
+            .from('donations')
+            .select('amount_xof, status, created_at')
+            .eq('status', 'succeeded')
+            .order('created_at', ascending: false)
+            .limit(8);
+        donationRows = List<Map<String, dynamic>>.from(rows);
+      } catch (_) {
+        // Non-admin staff are intentionally not allowed to read donation records.
+      }
+      if (!mounted) return;
+      setState(() {
+        intentions = List<Map<String, dynamic>>.from(intentionRows);
+        donations = donationRows;
+      });
+    } catch (error) {
+      if (mounted) setState(() => activitiesError = 'Impossible de charger les données du studio. Vérifiez les droits du compte.');
+    } finally {
+      if (mounted) setState(() => activitiesLoading = false);
+    }
+  }
+
+  String _relativeDate(dynamic value) {
+    final date = DateTime.tryParse(value?.toString() ?? '')?.toLocal();
+    if (date == null) return 'Date inconnue';
+    final diff = DateTime.now().difference(date);
+    if (diff.inMinutes < 1) return 'À l’instant';
+    if (diff.inMinutes < 60) return 'Il y a ${diff.inMinutes} min';
+    if (diff.inHours < 24) return 'Il y a ${diff.inHours} h';
+    return 'Il y a ${diff.inDays} j';
+  }
+
+  String _intentionStatus(dynamic value) {
+    switch (value?.toString()) {
+      case 'in_prayer': return 'En prière';
+      case 'answered': return 'Exaucée';
+      case 'archived': return 'Archivée';
+      default: return 'À prendre en charge';
+    }
+  }
 
   Future<void> _toggleLive() async { if (busy) return; setState(() { busy = true; liveError = null; }); try { if (live) { await liveService.disconnect(); if (mounted) setState(() { live = false; mic = false; camera = false; }); } else { final user = Supabase.instance.client.auth.currentUser; final displayName = (user?.userMetadata?['full_name'] ?? user?.email?.split('@').first ?? 'Animateur I24H').toString(); await liveService.connect(participantName: displayName, publishAudio: true); if (mounted) setState(() { live = true; mic = true; }); } } catch (error) { if (mounted) setState(() => liveError = error.toString().replaceFirst('Bad state: ', '')); } finally { if (mounted) setState(() => busy = false); } }
 
@@ -148,12 +201,28 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
           Expanded(child: _tabButton('Dons reçus', Icons.favorite_border_rounded, 1)),
         ])),
         const Divider(height: 1, color: AppColors.line),
-        Padding(padding: const EdgeInsets.all(16), child: tab == 0
-          ? Column(children: intentions.map((item) => Padding(padding: const EdgeInsets.only(bottom: 10), child: _activityRow(Icons.mark_chat_unread_outlined, item.$1, item.$2, item.$3, item.$3 == 'En prière' ? AppColors.success : AppColors.blue))).toList())
-          : Column(children: donations.map((item) => Padding(padding: const EdgeInsets.only(bottom: 10), child: _activityRow(Icons.favorite_rounded, item.$1, item.$3, item.$2, AppColors.success))).toList())),
+        Padding(padding: const EdgeInsets.all(16), child: activitiesLoading
+          ? const Padding(padding: EdgeInsets.all(22), child: Center(child: CircularProgressIndicator()))
+          : activitiesError != null
+              ? Column(children: [Text(activitiesError!, style: const TextStyle(color: AppColors.danger)), TextButton.icon(onPressed: _loadActivities, icon: const Icon(Icons.refresh), label: const Text('Réessayer'))])
+              : tab == 0
+                  ? intentions.isEmpty
+                      ? const Padding(padding: EdgeInsets.all(16), child: Text('Aucune intention reçue pour le moment.', style: TextStyle(color: AppColors.muted)))
+                      : Column(children: intentions.map((item) {
+                          final status = _intentionStatus(item['status']);
+                          final message = (item['message'] ?? 'Intention sans texte').toString();
+                          final title = message.length > 70 ? '${message.substring(0, 67)}…' : message;
+                          return Padding(padding: const EdgeInsets.only(bottom: 10), child: _activityRow(Icons.mark_chat_unread_outlined, title, _relativeDate(item['created_at']), status, status == 'En prière' ? AppColors.success : AppColors.blue));
+                        }).toList())
+                  : donations.isEmpty
+                      ? const Padding(padding: EdgeInsets.all(16), child: Text('Aucun don confirmé accessible à ce compte.', style: TextStyle(color: AppColors.muted)))
+                      : Column(children: donations.map((item) {
+                          final amount = (item['amount_xof'] as num?)?.toInt() ?? 0;
+                          return Padding(padding: const EdgeInsets.only(bottom: 10), child: _activityRow(Icons.favorite_rounded, 'Don confirmé', _relativeDate(item['created_at']), '${amount.toString()} FCFA', AppColors.success));
+                        }).toList())),
       ])),
       const SizedBox(height: 12),
-      const Text('Les intentions et dons affichés ici sont des exemples de présentation. Ils seront alimentés par les données réelles dès que les règles d’accès et les événements du direct seront configurés.', style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.5)),
+      const Text('Les intentions proviennent de Supabase. Les dons affichés sont les paiements confirmés et ne sont visibles qu’aux comptes administrateurs.', style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.5)),
     ]);
   }
 
