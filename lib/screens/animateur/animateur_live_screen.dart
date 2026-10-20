@@ -21,9 +21,8 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
   bool camera = false;
   bool screenShare = false;
   int tab = 0;
-  final guests = <Map<String, dynamic>>[
-    {'name': 'Invité de démonstration', 'role': 'Invité', 'mic': false, 'camera': false},
-  ];
+  List<Map<String, dynamic>> invitations = [];
+  bool invitationsLoading = false;
   List<Map<String, dynamic>> intentions = [];
   List<Map<String, dynamic>> donations = [];
   bool activitiesLoading = false;
@@ -33,6 +32,28 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
   void initState() {
     super.initState();
     _loadActivities();
+    _loadInvitations();
+  }
+
+  Future<void> _loadInvitations() async {
+    if (!mounted) return;
+    setState(() => invitationsLoading = true);
+    try {
+      final rows = await Supabase.instance.client
+          .from('live_guest_invitations')
+          .select('id, invited_name, invited_email, invite_code, expires_at, accepted_at, created_at')
+          .order('created_at', ascending: false)
+          .limit(12);
+      if (mounted) setState(() => invitations = List<Map<String, dynamic>>.from(rows));
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Impossible de charger les invitations. Vérifiez les droits Supabase.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => invitationsLoading = false);
+    }
   }
 
   Future<void> _loadActivities() async {
@@ -136,6 +157,7 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
                 'invite_code': code,
                 'expires_at': DateTime.now().toUtc().add(const Duration(hours: 24)).toIso8601String(),
               });
+              await _loadInvitations();
               if (!mounted) return;
               Navigator.pop(dialogContext);
               await showDialog<void>(context: context, builder: (ctx) => AlertDialog(
@@ -215,17 +237,52 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
           ]),
         );
         final guestPanel = I24HCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [const Expanded(child: SectionTitle(title: 'Invités du direct')), IconButton.filledTonal(onPressed: _invite, icon: const Icon(Icons.person_add_alt_1_rounded), tooltip: 'Inviter un participant')]),
-          const SizedBox(height: 8),
-          ...guests.map((guest) => Padding(padding: const EdgeInsets.only(bottom: 10), child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFFF6F8FC), borderRadius: BorderRadius.circular(15)), child: Row(children: [
-            CircleAvatar(backgroundColor: AppColors.sky, child: const Icon(Icons.person_rounded, color: AppColors.blue)),
-            const SizedBox(width: 10),
-            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(guest['name'] as String, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink)), const SizedBox(height: 3), Text(guest['role'] as String, style: const TextStyle(color: AppColors.muted, fontSize: 12))])),
-            IconButton(onPressed: () => setState(() => guest['mic'] = !(guest['mic'] as bool)), tooltip: (guest['mic'] as bool) ? 'Couper le micro' : 'Activer le micro', icon: Icon((guest['mic'] as bool) ? Icons.mic_rounded : Icons.mic_off_rounded, color: (guest['mic'] as bool) ? AppColors.success : AppColors.danger)),
-            IconButton(onPressed: () => setState(() => guest['camera'] = !(guest['camera'] as bool)), tooltip: (guest['camera'] as bool) ? 'Couper la caméra' : 'Activer la caméra', icon: Icon((guest['camera'] as bool) ? Icons.videocam_rounded : Icons.videocam_off_rounded, color: AppColors.blue)),
-            IconButton(onPressed: () => setState(() => guests.remove(guest)), tooltip: 'Retirer l’invité', icon: const Icon(Icons.person_remove_alt_1_rounded, color: AppColors.danger)),
-          ])))),
-          if (guests.isEmpty) const Padding(padding: EdgeInsets.all(12), child: Text('Aucun invité pour le moment.', style: TextStyle(color: AppColors.muted))),
+          Row(children: [
+            const Expanded(child: SectionTitle(title: 'Invitations au direct')),
+            IconButton(onPressed: invitationsLoading ? null : _loadInvitations, tooltip: 'Actualiser', icon: const Icon(Icons.refresh_rounded)),
+            IconButton.filledTonal(onPressed: _invite, icon: const Icon(Icons.person_add_alt_1_rounded), tooltip: 'Inviter un participant'),
+          ]),
+          const SizedBox(height: 5),
+          const Text('Les codes permettent aux personnes invitées de prendre la parole. Ils expirent après 24 heures.', style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.4)),
+          const SizedBox(height: 12),
+          if (invitationsLoading && invitations.isEmpty)
+            const Center(child: Padding(padding: EdgeInsets.all(18), child: CircularProgressIndicator()))
+          else if (invitations.isEmpty)
+            const Padding(padding: EdgeInsets.all(12), child: Text('Aucune invitation créée. Appuyez sur + pour inviter un membre.', style: TextStyle(color: AppColors.muted)))
+          else
+            ...invitations.map((invite) {
+              final expiry = DateTime.tryParse(invite['expires_at']?.toString() ?? '')?.toLocal();
+              final accepted = invite['accepted_at'] != null;
+              final expired = expiry == null || expiry.isBefore(DateTime.now());
+              final status = accepted ? 'Utilisée' : expired ? 'Expirée' : 'En attente';
+              final statusColor = accepted ? AppColors.success : expired ? AppColors.danger : AppColors.blue;
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(color: const Color(0xFFF6F8FC), borderRadius: BorderRadius.circular(15)),
+                  child: Row(children: [
+                    CircleAvatar(backgroundColor: AppColors.sky, child: const Icon(Icons.person_outline_rounded, color: AppColors.blue)),
+                    const SizedBox(width: 10),
+                    Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text((invite['invited_name'] ?? 'Membre invité').toString(), style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink)),
+                      const SizedBox(height: 3),
+                      Text((invite['invited_email'] ?? '').toString(), style: const TextStyle(color: AppColors.muted, fontSize: 11)),
+                      const SizedBox(height: 5),
+                      Text(status, style: TextStyle(color: statusColor, fontSize: 11, fontWeight: FontWeight.w800)),
+                    ])),
+                    IconButton(
+                      onPressed: accepted || expired ? null : () async {
+                        await Clipboard.setData(ClipboardData(text: (invite['invite_code'] ?? '').toString()));
+                        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Code d’invitation copié.')));
+                      },
+                      tooltip: 'Copier le code',
+                      icon: const Icon(Icons.copy_rounded, color: AppColors.blue),
+                    ),
+                  ]),
+                ),
+              );
+            }),
         ]));
         if (constraints.maxWidth >= 1000) return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(flex: 7, child: studio),
