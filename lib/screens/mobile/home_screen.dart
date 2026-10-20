@@ -66,7 +66,7 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 24),
                 _LiveHero(
                   onListen: () => _openPlayer(context),
-                  isConfigured: I24HConfig.liveVideoUrl.isNotEmpty,
+                  isConfigured: true,
                 ),
                 const SizedBox(height: 28),
                 Row(
