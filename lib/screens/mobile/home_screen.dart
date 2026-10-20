@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/config/i24h_config.dart';
 import '../../core/theme/app_theme.dart';
 import 'live_player_screen.dart';
 
@@ -63,7 +64,10 @@ class HomeScreen extends StatelessWidget {
                 const SizedBox(height: 10),
                 const Text('Retrouvez la parole, la prière et la communauté I24H tout au long de la journée.', style: TextStyle(fontSize: 14, height: 1.5, color: AppColors.muted)),
                 const SizedBox(height: 24),
-                _LiveHero(onListen: () => _openPlayer(context)),
+                _LiveHero(
+                  onListen: () => _openPlayer(context),
+                  isConfigured: I24HConfig.liveVideoUrl.isNotEmpty,
+                ),
                 const SizedBox(height: 28),
                 Row(
                   children: [
@@ -142,7 +146,8 @@ class HomeScreen extends StatelessWidget {
 
 class _LiveHero extends StatelessWidget {
   final VoidCallback onListen;
-  const _LiveHero({required this.onListen});
+  final bool isConfigured;
+  const _LiveHero({required this.onListen, required this.isConfigured});
 
   @override
   Widget build(BuildContext context) {
@@ -168,21 +173,21 @@ class _LiveHero extends StatelessWidget {
             Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(30)), child: const Text('24H / 24', style: TextStyle(color: AppColors.gold, fontSize: 10, fontWeight: FontWeight.w800))),
           ]),
           const SizedBox(height: 22),
-          const Text('La radio en continu', style: TextStyle(color: Colors.white, fontSize: 23, height: 1.15, fontWeight: FontWeight.w900, letterSpacing: -0.4)),
+          Text(isConfigured ? 'Le direct vidéo I24H' : 'Le direct vidéo I24H', style: const TextStyle(color: Colors.white, fontSize: 23, height: 1.15, fontWeight: FontWeight.w900, letterSpacing: -0.4)),
           const SizedBox(height: 8),
-          const Text('Une présence. Une parole. Un moment.', style: TextStyle(color: Color(0xFFD4DEEC), fontSize: 13)),
+          Text(isConfigured ? 'Regardez, réagissez et vivez le direct ensemble.' : 'Le lecteur est prêt à recevoir le flux vidéo officiel.', style: const TextStyle(color: Color(0xFFD4DEEC), fontSize: 13)),
           const SizedBox(height: 22),
           Row(children: [
             Expanded(
               child: FilledButton.icon(
                 onPressed: onListen,
                 style: FilledButton.styleFrom(backgroundColor: AppColors.gold, foregroundColor: AppColors.navy, minimumSize: const Size(0, 52), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16))),
-                icon: const Icon(Icons.play_arrow_rounded, size: 25),
-                label: const Text('Écouter le direct', style: TextStyle(fontWeight: FontWeight.w900)),
+                icon: const Icon(Icons.play_circle_fill_rounded, size: 25),
+                label: const Text('Regarder le direct', style: TextStyle(fontWeight: FontWeight.w900)),
               ),
             ),
             const SizedBox(width: 12),
-            Container(width: 52, height: 52, decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white24)), child: const Icon(Icons.graphic_eq_rounded, color: AppColors.gold, size: 25)),
+            Container(width: 52, height: 52, decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white24)), child: const Icon(Icons.live_tv_rounded, color: AppColors.gold, size: 25)),
           ]),
         ],
       ),
