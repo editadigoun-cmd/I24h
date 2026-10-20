@@ -56,6 +56,8 @@ class I24HLiveService {
       await room.connect(serverUrl, token);
       if (publishAudio) {
         await room.localParticipant?.setMicrophoneEnabled(true);
+      } else {
+        await room.startAudio();
       }
       _room = room;
       return room;
