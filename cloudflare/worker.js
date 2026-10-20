@@ -55,8 +55,8 @@ export default {
       return json({ error: "Not found" }, 404);
     }
 
-    const authHeader = request.headers.get("Authorization") || "";
-    if (!authHeader.startsWith("Bearer ")) return json({ error: "Authentification requise." }, 401);
+    const authorization = request.headers.get("Authorization") || "";
+    if (!authorization.startsWith("Bearer ")) return json({ error: "Authentification requise." }, 401);
     if (!env.LIVEKIT_API_SECRET || !env.SUPABASE_ANON_KEY) {
       return json({ error: "Configuration serveur incomplète. Les secrets LiveKit et Supabase doivent être configurés." }, 503);
     }
@@ -64,8 +64,7 @@ export default {
     let body;
     try { body = await request.json(); } catch { return json({ error: "Corps JSON invalide." }, 400); }
     const participantName = typeof body.participant_name === "string" ? body.participant_name.trim().slice(0, 80) : "Participant I24H";
-    const authorization = authHeader;
-
+    const invitationCode = typeof body.invitation_code === "string" ? body.invitation_code.trim() : "";
     const authResponse = await fetch(SUPABASE_URL + "/auth/v1/user", {
       headers: { "Authorization": authorization, "apikey": env.SUPABASE_ANON_KEY },
     });
@@ -80,7 +79,26 @@ export default {
     if (!profileResponse.ok) return json({ error: "Impossible de vérifier le rôle du compte." }, 403);
     const profiles = await profileResponse.json();
     const role = Array.isArray(profiles) && profiles[0] ? String(profiles[0].role || "").toLowerCase() : "";
-    const canPublish = role === "admin" || role === "administrateur" || role === "animateur";
+    let canPublish = role === "admin" || role === "administrateur" || role === "animateur";
+
+    if (!canPublish && invitationCode) {
+      const inviteResponse = await fetch(SUPABASE_URL + "/rest/v1/rpc/consume_live_guest_invitation", {
+        method: "POST",
+        headers: {
+          "Authorization": authorization,
+          "apikey": env.SUPABASE_ANON_KEY,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          p_invite_code: invitationCode,
+          p_participant_id: user.id,
+          p_participant_email: user.email || "",
+        }),
+      });
+      if (!inviteResponse.ok) return json({ error: "Impossible de vérifier cette invitation. Réessayez." }, 403);
+      canPublish = (await inviteResponse.json()) === true;
+      if (!canPublish) return json({ error: "Invitation invalide, expirée ou destinée à une autre adresse e-mail." }, 403);
+    }
 
     const now = Math.floor(Date.now() / 1000);
     const token = await signJwt({
@@ -103,7 +121,7 @@ export default {
       server_url: LIVEKIT_URL,
       participant_token: token,
       room_name: ROOM_NAME,
-      role: canPublish ? "speaker" : "listener",
+      role: canPublish ? (role === "admin" || role === "administrateur" || role === "animateur" ? "speaker" : "guest-speaker") : "listener",
       expires_in: 3600,
     }, 201);
   },
