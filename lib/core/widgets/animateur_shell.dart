@@ -28,11 +28,13 @@ class _AnimateurShellState extends State<AnimateurShell> {
         surfaceTintColor: Colors.white,
         toolbarHeight: 76,
         title: Row(children: [
-          if (!wide) const Padding(padding: EdgeInsets.only(right: 9), child: Icon(Icons.graphic_eq_rounded, color: AppColors.blue, size: 28)),
-          const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text('I24H · Studio Animateur', style: TextStyle(fontSize: 19, fontWeight: FontWeight.w900, color: AppColors.ink)),
-            SizedBox(height: 3),
-            Text('Préparez et animez vos émissions', style: TextStyle(fontSize: 12, color: AppColors.muted, fontWeight: FontWeight.w500)),
+          if (!wide) const Padding(padding: EdgeInsets.only(right: 7), child: Icon(Icons.graphic_eq_rounded, color: AppColors.blue, size: 24)),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(wide ? 'I24H · Studio Animateur' : 'I24H Animateur', style: TextStyle(fontSize: wide ? 19 : 15, fontWeight: FontWeight.w900, color: AppColors.ink)),
+            if (wide) ...const [
+              SizedBox(height: 3),
+              Text('Préparez et animez vos émissions', style: TextStyle(fontSize: 12, color: AppColors.muted, fontWeight: FontWeight.w500)),
+            ],
           ]),
         ]),
         actions: [
@@ -43,11 +45,11 @@ class _AnimateurShellState extends State<AnimateurShell> {
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFF19A974),
                 foregroundColor: Colors.white,
-                padding: EdgeInsets.symmetric(horizontal: wide ? 16 : 10),
+                padding: EdgeInsets.symmetric(horizontal: wide ? 16 : 8),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
               ),
               icon: const Icon(Icons.sensors_rounded, size: 19),
-              label: Text(wide ? 'Démarrer le live' : 'Live', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+              label: Text(wide ? 'Démarrer le live' : 'LIVE', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11)),
             ),
           ),
           IconButton(tooltip: 'Notifications', onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Les notifications seront reliées au compte animateur.'))), icon: const Icon(Icons.notifications_none_rounded)),
@@ -74,6 +76,7 @@ class _AnimateurShellState extends State<AnimateurShell> {
         ])),
         Expanded(child: AnimatedSwitcher(duration: const Duration(milliseconds: 220), child: KeyedSubtree(key: ValueKey(index), child: pages[index]))),
       ]),
+      floatingActionButton: !wide && index != 1 ? FloatingActionButton.extended(onPressed: () => setState(() => index = 1), backgroundColor: const Color(0xFF19A974), foregroundColor: Colors.white, icon: const Icon(Icons.sensors_rounded), label: const Text('Démarrer le live', style: TextStyle(fontWeight: FontWeight.w800))) : null,
       bottomNavigationBar: !wide ? NavigationBar(height: 72, selectedIndex: index, onDestinationSelected: (v) => setState(() => index = v), destinations: const [
         NavigationDestination(icon: Icon(Icons.grid_view_rounded), label: 'Accueil'),
         NavigationDestination(icon: Icon(Icons.sensors_rounded), label: 'Direct'),
