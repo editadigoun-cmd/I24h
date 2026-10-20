@@ -16,6 +16,18 @@ class I24HConfig {
     defaultValue: '',
   );
 
+  static const String liveVideoUrl = String.fromEnvironment(
+    'I24H_LIVE_VIDEO_URL',
+    defaultValue: '',
+  );
+
+  /// Separate audio-only rendition required to genuinely save mobile data.
+  static const String liveAudioUrl = String.fromEnvironment(
+    'I24H_LIVE_AUDIO_URL',
+    defaultValue: '',
+  );
+
+  /// Legacy audio setting kept for existing replay/test builds.
   static const String liveStreamUrl = String.fromEnvironment(
     'I24H_LIVE_STREAM_URL',
     defaultValue: '',
