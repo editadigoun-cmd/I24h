@@ -5,6 +5,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:video_player/video_player.dart';
 
 import '../../core/config/i24h_config.dart';
+import '../../core/services/i24h_live_service.dart';
 import '../../core/theme/app_theme.dart';
 
 class LivePlayerScreen extends StatefulWidget {
@@ -32,6 +33,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   bool _loading = false;
   bool _playing = false;
   String? _errorMessage;
+  final I24HLiveService _liveService = I24HLiveService();
 
   String get _videoUrl => widget.isLive ? I24HConfig.liveVideoUrl.trim() : '';
 
@@ -92,6 +94,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
 
   @override
   void dispose() {
+    unawaited(_liveService.disconnect());
     unawaited(_audioPlayer.dispose());
     final controller = _videoController;
     if (controller != null) unawaited(controller.dispose());
@@ -101,6 +104,24 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   Future<void> _togglePlayback() async {
     if (_loading) return;
     setState(() => _errorMessage = null);
+
+    if (widget.isLive) {
+      setState(() => _loading = true);
+      try {
+        if (_liveService.isConnected) {
+          await _liveService.disconnect();
+          if (mounted) setState(() => _playing = false);
+        } else {
+          await _liveService.connect(participantName: 'Auditeur I24H', publishAudio: false);
+          if (mounted) setState(() => _playing = true);
+        }
+      } catch (error) {
+        if (mounted) setState(() { _playing = false; _errorMessage = error.toString().replaceFirst('Bad state: ', ''); });
+      } finally {
+        if (mounted) setState(() => _loading = false);
+      }
+      return;
+    }
 
     if (!widget.isLive || _audioOnly) {
       if (_audioUrl.isEmpty) {
