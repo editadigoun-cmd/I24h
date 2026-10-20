@@ -401,7 +401,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(26),
                     child: AspectRatio(
-                      aspectRatio: 16 / 9,
+                      aspectRatio: MediaQuery.sizeOf(context).width < 600 ? 9 / 14 : 16 / 9,
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
@@ -419,8 +419,8 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                             left: 14,
                             top: 14,
                             child: _StatusPill(
-                              label: widget.isLive ? (_audioOnly ? 'ÉCOUTE SEULE' : 'DIRECT') : 'REPLAY',
-                              color: _audioOnly ? AppColors.cyan : const Color(0xFFFF5D70),
+                              label: !widget.isLive ? 'REPLAY' : _audioOnly ? 'ÉCOUTE SEULE' : (_liveService.room?.remoteParticipants.isNotEmpty == true ? 'EN DIRECT' : 'EN ATTENTE'),
+                              color: _audioOnly ? AppColors.cyan : (_liveService.room?.remoteParticipants.isNotEmpty == true ? const Color(0xFFFF5D70) : AppColors.gold),
                             ),
                           ),
                           if (isVideoAvailable)
