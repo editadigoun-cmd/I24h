@@ -51,7 +51,9 @@ export default {
         apiKeyConfigured: Boolean(LIVEKIT_API_KEY),
       });
     }
-    if (request.method !== "POST" || url.pathname !== "/api/livekit/token") {
+    const isTokenRoute = request.method === "POST" && url.pathname === "/api/livekit/token";
+    const isPromoteRoute = request.method === "POST" && url.pathname === "/api/livekit/promote";
+    if (!isTokenRoute && !isPromoteRoute) {
       return json({ error: "Not found" }, 404);
     }
 
@@ -80,6 +82,40 @@ export default {
     const profiles = await profileResponse.json();
     const role = Array.isArray(profiles) && profiles[0] ? String(profiles[0].role || "").toLowerCase() : "";
     let canPublish = role === "admin" || role === "administrateur" || role === "animateur";
+
+    if (isPromoteRoute) {
+      if (!canPublish) return json({ error: "Seuls les administrateurs et animateurs peuvent faire monter un auditeur." }, 403);
+      const identity = typeof body.identity === "string" ? body.identity.trim() : "";
+      if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(identity)) {
+        return json({ error: "Identifiant du membre invalide." }, 400);
+      }
+      const now = Math.floor(Date.now() / 1000);
+      const serviceToken = await signJwt({
+        iss: LIVEKIT_API_KEY,
+        sub: "i24h-moderator",
+        nbf: now - 5,
+        iat: now,
+        exp: now + 60,
+        video: { roomAdmin: true, room: ROOM_NAME },
+      }, env.LIVEKIT_API_SECRET);
+      const promoteResponse = await fetch(LIVEKIT_URL.replace(/^wss:/, "https:").replace(/\\/$/, "") + "/twirp/livekit.RoomService/UpdateParticipant", {
+        method: "POST",
+        headers: {
+          "Authorization": "Bearer " + serviceToken,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          room: ROOM_NAME,
+          identity,
+          permission: { canPublish: true, canSubscribe: true, canPublishData: true },
+        }),
+      });
+      if (!promoteResponse.ok) {
+        const detail = (await promoteResponse.text()).slice(0, 300);
+        return json({ error: "LiveKit n'a pas pu autoriser ce membre à parler.", detail }, 502);
+      }
+      return json({ success: true, identity, canPublish: true });
+    }
 
     if (!canPublish && invitationCode) {
       const inviteResponse = await fetch(SUPABASE_URL + "/rest/v1/rpc/consume_live_guest_invitation", {
