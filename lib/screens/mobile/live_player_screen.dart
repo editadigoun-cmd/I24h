@@ -666,7 +666,7 @@ class _VideoPlaceholder extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               Text(
-                loading ? 'Connexion au flux…' : (audioOnly ? 'La parole, sans la vidéo.' : 'Le flux officiel sera affiché ici.'),
+                loading ? 'Connexion au direct…' : (audioOnly ? 'La parole, sans la vidéo.' : (isLive ? 'Connecté au direct. En attente de la caméra de l’animateur…' : 'Le flux de ce replay sera affiché ici.')),
                 style: const TextStyle(color: Color(0xFFB8C9E2), fontSize: 10),
               ),
             ],
