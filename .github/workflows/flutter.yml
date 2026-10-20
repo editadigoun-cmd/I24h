@@ -1,47 +1,28 @@
-name: I24H Flutter CI and Android APK
+name: I24H Flutter CI
 
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
-  workflow_dispatch:
 
 permissions:
   contents: read
 
 jobs:
-  android-apk:
+  analyze:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-
       - name: Generate Android runner
         run: flutter create --platforms=android --org com.i24h .
-
       - name: Get dependencies
         run: flutter pub get
-
       - name: Analyze user app
         run: dart analyze lib/main.dart
-
-      - name: Build release APK connected to I24H Supabase
-        run: >
-          flutter build apk --release
-          --dart-define=I24H_SUPABASE_URL=https://pwujpjjoxxqupckurrad.supabase.co
-          --dart-define=I24H_SUPABASE_PUBLISHABLE_KEY=sb_publishable_u7eKQeWIvlrbMlsHO_uiSw_op8UW9ew
-
-      - name: Upload Android APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: I24H-Android-APK
-          path: build/app/outputs/flutter-apk/app-release.apk
-          if-no-files-found: error
-          retention-days: 14
