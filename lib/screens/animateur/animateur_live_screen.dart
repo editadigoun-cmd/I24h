@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:livekit_client/livekit_client.dart';
 import '../../core/services/i24h_live_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
@@ -159,9 +160,48 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
     }
   }
 
-  Future<void> _toggleLive() async { if (busy) return; setState(() { busy = true; liveError = null; }); try { if (live) { await liveService.disconnect(); if (mounted) setState(() { live = false; mic = false; camera = false; }); } else { final user = Supabase.instance.client.auth.currentUser; final displayName = (user?.userMetadata?['full_name'] ?? user?.email?.split('@').first ?? 'Animateur I24H').toString(); await liveService.connect(participantName: displayName, publishAudio: true); if (mounted) setState(() { live = true; mic = true; }); } } catch (error) { if (mounted) setState(() => liveError = error.toString().replaceFirst('Bad state: ', '')); } finally { if (mounted) setState(() => busy = false); } }
+  VideoTrack? get _localCameraTrack {
+    final participant = liveService.room?.localParticipant;
+    if (participant == null) return null;
+    for (final publication in participant.videoTrackPublications) {
+      final track = publication.track;
+      if (track is VideoTrack) return track;
+    }
+    return null;
+  }
 
-  Future<void> _toggleCamera() async { if (!live) { setState(() => liveError = 'Démarrez le direct avant d’activer la caméra.'); return; } try { await liveService.setCameraEnabled(!camera); if (mounted) setState(() { camera = !camera; liveError = null; }); } catch (error) { if (mounted) setState(() => liveError = error.toString().replaceFirst('Bad state: ', '')); } }
+  Future<void> _toggleLive() async {
+    if (busy) return;
+    setState(() { busy = true; liveError = null; });
+    try {
+      if (live) {
+        await liveService.disconnect();
+        if (mounted) setState(() { live = false; mic = false; camera = false; screenShare = false; activeMembers = []; });
+      } else {
+        final user = Supabase.instance.client.auth.currentUser;
+        final displayName = (user?.userMetadata?['full_name'] ?? user?.email?.split('@').first ?? 'Animateur I24H').toString();
+        await liveService.connect(participantName: displayName, publishAudio: true);
+        if (mounted) setState(() { live = true; mic = true; liveError = null; });
+        await _refreshActiveMembers();
+      }
+    } catch (error) {
+      if (mounted) setState(() { live = false; liveError = error.toString().replaceFirst('Bad state: ', ''); });
+      await liveService.disconnect();
+    } finally {
+      if (mounted) setState(() => busy = false);
+    }
+  }
+
+  Future<void> _toggleCamera() async {
+    if (!live) { setState(() => liveError = 'Démarrez le direct avant d’activer la caméra.'); return; }
+    try {
+      final enabled = !camera;
+      await liveService.setCameraEnabled(enabled);
+      if (mounted) setState(() { camera = enabled; liveError = null; });
+    } catch (error) {
+      if (mounted) setState(() => liveError = error.toString().replaceFirst('Bad state: ', ''));
+    }
+  }
 
   Future<void> _toggleScreenShare() async { if (!live) { setState(() => liveError = 'Démarrez le direct avant de partager l’écran.'); return; } try { await liveService.setScreenShareEnabled(!screenShare); if (mounted) setState(() { screenShare = !screenShare; liveError = null; }); } catch (error) { if (mounted) setState(() => liveError = error.toString().replaceFirst('Bad state: ', '')); } }
 
@@ -267,13 +307,41 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
               if (live) const StatusPill(label: 'ON AIR', color: AppColors.danger),
             ]),
             const SizedBox(height: 25),
-            Container(height: 180, width: double.infinity, decoration: BoxDecoration(color: Colors.white.withOpacity(.06), borderRadius: BorderRadius.circular(19), border: Border.all(color: Colors.white.withOpacity(.1))), child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-              Container(width: 70, height: 70, decoration: BoxDecoration(color: camera ? AppColors.blue.withOpacity(.35) : Colors.white.withOpacity(.09), shape: BoxShape.circle), child: Icon(camera ? Icons.videocam_rounded : Icons.mic_rounded, size: 32, color: Colors.white)),
-              const SizedBox(height: 13),
-              Text(camera ? 'CAMÉRA ACTIVÉE' : 'APERÇU DU STUDIO', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
-              const SizedBox(height: 5),
-              Text(live ? 'Votre émission est marquée comme en direct' : 'Activez vos équipements avant de démarrer', style: const TextStyle(color: Color(0xFFB8C9E5), fontSize: 11), textAlign: TextAlign.center),
-            ]))),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(19),
+              child: Container(
+                height: 220,
+                width: double.infinity,
+                decoration: BoxDecoration(color: Colors.black, border: Border.all(color: Colors.white.withOpacity(.1))),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (camera && _localCameraTrack != null)
+                      VideoTrackRenderer(_localCameraTrack!, fit: VideoViewFit.cover)
+                    else
+                      Container(
+                        color: const Color(0xFF0B1B32),
+                        child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+                          Icon(camera ? Icons.videocam_off_rounded : Icons.videocam_rounded, size: 42, color: Colors.white70),
+                          const SizedBox(height: 10),
+                          Text(camera ? 'Caméra activée — aperçu en préparation' : 'Activez la caméra pour voir votre aperçu', style: const TextStyle(color: Colors.white, fontSize: 12), textAlign: TextAlign.center),
+                        ])),
+                      ),
+                    Positioned(left: 12, top: 12, child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
+                      decoration: BoxDecoration(color: live ? Colors.red.withOpacity(.9) : Colors.black54, borderRadius: BorderRadius.circular(20)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.circle, color: Colors.white, size: 7),
+                        const SizedBox(width: 6),
+                        Text(live ? 'EN DIRECT' : 'APERÇU STUDIO', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+                      ]),
+                    )),
+                    if (camera && _localCameraTrack != null)
+                      const Positioned(right: 10, bottom: 10, child: Icon(Icons.flip_camera_android_rounded, color: Colors.white70, size: 18)),
+                  ],
+                ),
+              ),
+            ),
             const SizedBox(height: 18),
             Wrap(spacing: 9, runSpacing: 9, children: [
               FilledButton.icon(onPressed: busy ? null : _toggleLive, style: FilledButton.styleFrom(backgroundColor: live ? AppColors.danger : AppColors.success, foregroundColor: Colors.white), icon: busy ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Icon(live ? Icons.stop_rounded : Icons.sensors_rounded), label: Text(busy ? 'Connexion…' : live ? 'Terminer le direct' : 'Démarrer le direct')),
