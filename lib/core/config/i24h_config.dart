@@ -1,19 +1,19 @@
 /// Public build-time configuration for the I24H mobile application.
 ///
-/// Pass the Supabase project URL and publishable key with --dart-define.
-/// Publishable keys are intended for client applications; never put a
-/// Supabase service-role key or payment-provider secret in the mobile app.
+/// The Supabase URL and publishable key are public client configuration.
+/// Never put a Supabase service-role key or payment-provider secret in the app.
+/// Build-time defines can override these defaults for staging or another project.
 class I24HConfig {
   I24HConfig._();
 
   static const String supabaseUrl = String.fromEnvironment(
     'I24H_SUPABASE_URL',
-    defaultValue: '',
+    defaultValue: 'https://pwujpjjoxxqupckurrad.supabase.co',
   );
 
   static const String supabasePublishableKey = String.fromEnvironment(
     'I24H_SUPABASE_PUBLISHABLE_KEY',
-    defaultValue: '',
+    defaultValue: 'sb_publishable_u7eKQeWIvlrbMlsHO_uiSw_op8UW9ew',
   );
 
   static const String liveVideoUrl = String.fromEnvironment(
