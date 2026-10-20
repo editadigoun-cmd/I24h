@@ -14,14 +14,12 @@ class I24HApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hasSession = I24HConfig.backendReady &&
-        Supabase.instance.client.auth.currentSession != null;
-
+    final hasSession = I24HConfig.backendReady && Supabase.instance.client.auth.currentSession != null;
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'I24H',
       theme: AppTheme.light,
-      home: hasSession ? const UserAppScreen() : const OnboardingScreen(),
+      home: hasSession ? const RoleHomeGate() : const OnboardingScreen(),
       routes: {
         '/login': (_) => const LoginScreen(),
         '/mobile': (_) => const UserAppScreen(),
@@ -30,4 +28,67 @@ class I24HApp extends StatelessWidget {
       },
     );
   }
+}
+
+class RoleHomeGate extends StatefulWidget {
+  const RoleHomeGate({super.key});
+  @override
+  State<RoleHomeGate> createState() => _RoleHomeGateState();
+}
+
+class _RoleHomeGateState extends State<RoleHomeGate> {
+  late Future<String> destination;
+
+  @override
+  void initState() {
+    super.initState();
+    destination = _resolveDestination();
+  }
+
+  Future<String> _resolveDestination() async {
+    try {
+      final client = Supabase.instance.client;
+      final user = client.auth.currentUser;
+      if (user == null) return '/login';
+      final profile = await client.from('profiles').select('role').eq('id', user.id).maybeSingle();
+      switch (profile?['role'] as String? ?? 'faithful') {
+        case 'admin':
+          return '/admin';
+        case 'animateur':
+          return '/animateur';
+        default:
+          return '/mobile';
+      }
+    } catch (error) {
+      debugPrint('I24H role routing fallback: $error');
+      return '/mobile';
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<String>(
+    future: destination,
+    builder: (context, snapshot) {
+      if (snapshot.hasError || snapshot.connectionState == ConnectionState.done) {
+        switch (snapshot.data ?? '/mobile') {
+          case '/admin':
+            return const AdminDashboardScreen();
+          case '/animateur':
+            return const AnimateurDashboardScreen();
+          case '/login':
+            return const LoginScreen();
+          default:
+            return const UserAppScreen();
+        }
+      }
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+          CircularProgressIndicator(),
+          SizedBox(height: 18),
+          Text('Préparation de votre espace I24H…', style: TextStyle(color: AppColors.muted, fontWeight: FontWeight.w700)),
+        ])),
+      );
+    },
+  );
 }
