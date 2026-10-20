@@ -60,20 +60,22 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
     });
     VideoPlayerController? controller;
     try {
-      controller = VideoPlayerController.networkUrl(Uri.parse(_videoUrl));
-      await controller.initialize();
-      await controller.setLooping(true);
+      final createdController =
+          VideoPlayerController.networkUrl(Uri.parse(_videoUrl));
+      controller = createdController;
+      await createdController.initialize();
+      await createdController.setLooping(true);
       if (!mounted) {
-        await controller.dispose();
+        await createdController.dispose();
         return;
       }
       final previous = _videoController;
       setState(() {
-        _videoController = controller;
+        _videoController = createdController;
         _playing = true;
       });
       if (previous != null) await previous.dispose();
-      await controller.play();
+      await createdController.play();
     } catch (error) {
       await controller?.dispose();
       if (mounted) {
