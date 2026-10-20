@@ -74,6 +74,28 @@ class I24HLiveService {
     }
   }
 
+  Future<void> promoteParticipant(String identity) async {
+    final session = Supabase.instance.client.auth.currentSession;
+    if (session == null || session.accessToken.isEmpty) {
+      throw StateError('Connectez-vous à votre compte I24H.');
+    }
+    final response = await http.post(
+      Uri.parse('https://i24h.ccds22431.workers.dev/api/livekit/promote'),
+      headers: {
+        'Authorization': 'Bearer ${session.accessToken}',
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({'identity': identity}),
+    ).timeout(const Duration(seconds: 20));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      String message = 'Impossible de faire monter ce membre.';
+      try {
+        final payload = jsonDecode(response.body);
+        if (payload is Map && payload['error'] != null) message = payload['error'].toString();
+      } catch (_) {}
+      throw StateError(message);
+    }
+  }
   Future<void> setCameraEnabled(bool enabled) async {
     final participant = _room?.localParticipant;
     if (participant == null) throw StateError('Le studio n’est pas connecté.');
