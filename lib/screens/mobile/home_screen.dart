@@ -166,16 +166,16 @@ class _LiveHero extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: [
-            Container(width: 8, height: 8, decoration: const BoxDecoration(color: Color(0xFFFF6B6B), shape: BoxShape.circle)),
+            Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.gold, shape: BoxShape.circle)),
             const SizedBox(width: 8),
-            const Text('EN DIRECT', style: TextStyle(color: Colors.white, fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.w900)),
+            const Text('ESPACE DIRECT', style: TextStyle(color: Colors.white, fontSize: 10, letterSpacing: 1.5, fontWeight: FontWeight.w900)),
             const Spacer(),
             Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6), decoration: BoxDecoration(color: Colors.white.withOpacity(0.12), borderRadius: BorderRadius.circular(30)), child: const Text('24H / 24', style: TextStyle(color: AppColors.gold, fontSize: 10, fontWeight: FontWeight.w800))),
           ]),
           const SizedBox(height: 22),
           Text(isConfigured ? 'Le direct vidéo I24H' : 'Le direct vidéo I24H', style: const TextStyle(color: Colors.white, fontSize: 23, height: 1.15, fontWeight: FontWeight.w900, letterSpacing: -0.4)),
           const SizedBox(height: 8),
-          Text(isConfigured ? 'Regardez, réagissez et vivez le direct ensemble.' : 'Le lecteur est prêt à recevoir le flux vidéo officiel.', style: const TextStyle(color: Color(0xFFD4DEEC), fontSize: 13)),
+          const Text('Ouvrez le lecteur pour rejoindre la diffusion si elle est en cours.', style: TextStyle(color: Color(0xFFD4DEEC), fontSize: 13)),
           const SizedBox(height: 22),
           Row(children: [
             Expanded(
