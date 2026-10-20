@@ -27,6 +27,6 @@ jobs:
       - name: Analyze user app
         run: dart analyze lib
       - name: Add Android microphone permission
-        run: sed -i '/<application/i\\    <uses-permission android:name="android.permission.RECORD_AUDIO" />' android/app/src/main/AndroidManifest.xml
+        run: sed -i '/<application/i\    <uses-permission android:name="android.permission.RECORD_AUDIO" />' android/app/src/main/AndroidManifest.xml
       - name: Build Flutter Web for Cloudflare
         run: flutter build web --release
