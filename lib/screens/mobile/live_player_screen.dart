@@ -38,6 +38,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   final I24HLiveService _liveService = I24HLiveService();
   EventsListener<RoomEvent>? _roomListener;
   VideoTrack? _remoteVideoTrack;
+  bool _guestMicEnabled = false;
 
   String get _videoUrl => widget.isLive ? I24HConfig.liveVideoUrl.trim() : '';
 
@@ -210,6 +211,19 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
     }
   }
 
+  Future<void> _toggleGuestMicrophone() async {
+    final participant = _liveService.room?.localParticipant;
+    if (participant == null) {
+      if (mounted) setState(() => _errorMessage = 'Rejoignez d’abord le direct.');
+      return;
+    }
+    try {
+      await participant.setMicrophoneEnabled(!_guestMicEnabled);
+      if (mounted) setState(() { _guestMicEnabled = !_guestMicEnabled; _errorMessage = null; });
+    } catch (error) {
+      if (mounted) setState(() => _errorMessage = 'Votre micro n’est pas encore autorisé. Demandez à l’animateur de vous faire monter.');
+    }
+  }
   Future<void> _joinAsGuest() async {
     if (_loading || !widget.isLive) return;
     final codeController = TextEditingController();
@@ -503,6 +517,14 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                           ),
                         ],
                       ),
+                      if (widget.isLive && _liveService.isConnected) ...[
+                        const SizedBox(height: 10),
+                        OutlinedButton.icon(
+                          onPressed: _loading ? null : _toggleGuestMicrophone,
+                          icon: Icon(_guestMicEnabled ? Icons.mic_off_rounded : Icons.mic_rounded),
+                          label: Text(_guestMicEnabled ? 'Couper mon micro' : 'Activer mon micro pour parler'),
+                        ),
+                      ],
                       if (widget.isLive) ...[
                         const SizedBox(height: 10),
                         OutlinedButton.icon(
