@@ -40,7 +40,12 @@ jobs:
       - name: Test
         run: flutter test
       - name: Build Android APK
-        run: flutter build apk --release --build-name=1.0.1 --build-number=${{ github.run_number }}
+        run: >-
+          flutter build apk --release
+          --build-name=1.0.1
+          --build-number=${{ github.run_number }}
+          --dart-define=I24H_SUPABASE_URL=https://pwujpjjoxxqupckurrad.supabase.co
+          --dart-define=I24H_SUPABASE_PUBLISHABLE_KEY=sb_publishable_u7eKQeWIvlrbMlsHO_uiSw_op8UW9ew
       - name: Build Web
         run: flutter build web --release
       - name: Upload APK
