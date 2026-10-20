@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:video_player/video_player.dart';
+import 'package:video_player/video_player.dart' hide VideoTrack;
 import 'package:livekit_client/livekit_client.dart';
 
 import '../../core/config/i24h_config.dart';
