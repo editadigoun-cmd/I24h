@@ -54,7 +54,13 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
-    if (widget.isLive && _videoUrl.isNotEmpty) {
+    if (widget.isLive) {
+      // Join LiveKit automatically when the live player opens. The HLS URL is
+      // optional and is not the source of the interactive live session.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_liveService.isConnected) unawaited(_togglePlayback());
+      });
+    } else if (_videoUrl.isNotEmpty) {
       unawaited(_initializeVideo());
     }
   }
@@ -511,8 +517,8 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                               ),
                               icon: _loading
                                   ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.cyan))
-                                  : Icon(_playing ? Icons.pause_rounded : Icons.play_arrow_rounded, size: 23),
-                              label: Text(_playing ? 'Mettre en pause' : 'Lancer la lecture', style: const TextStyle(fontWeight: FontWeight.w800)),
+                                  : Icon(widget.isLive ? (_liveService.isConnected ? Icons.logout_rounded : Icons.play_arrow_rounded) : (_playing ? Icons.pause_rounded : Icons.play_arrow_rounded), size: 23),
+                              label: Text(widget.isLive ? (_liveService.isConnected ? 'Quitter le direct' : 'Rejoindre le direct') : (_playing ? 'Mettre en pause' : 'Lancer la lecture'), style: const TextStyle(fontWeight: FontWeight.w800)),
                             ),
                           ),
                         ],
