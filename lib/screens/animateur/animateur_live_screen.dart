@@ -23,6 +23,11 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
   int tab = 0;
   List<Map<String, dynamic>> invitations = [];
   bool invitationsLoading = false;
+  final TextEditingController memberSearchController = TextEditingController();
+  String memberSearch = '';
+  List<Map<String, String>> activeMembers = [];
+  bool membersLoading = false;
+  final Set<String> promotingMembers = {};
   List<Map<String, dynamic>> intentions = [];
   List<Map<String, dynamic>> donations = [];
   bool activitiesLoading = false;
@@ -56,6 +61,51 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
     }
   }
 
+  Future<void> _refreshActiveMembers() async {
+    if (!live || liveService.room == null) {
+      if (mounted) setState(() => activeMembers = []);
+      return;
+    }
+    if (mounted) setState(() => membersLoading = true);
+    try {
+      final room = liveService.room!;
+      final members = room.remoteParticipants.values.map((participant) => <String, String>{
+        'identity': participant.identity,
+        'name': participant.name.isNotEmpty ? participant.name : participant.identity,
+      }).toList()..sort((a, b) => a['name']!.toLowerCase().compareTo(b['name']!.toLowerCase()));
+      if (mounted) setState(() => activeMembers = members);
+    } catch (_) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Impossible de récupérer les auditeurs connectés.')));
+    } finally {
+      if (mounted) setState(() => membersLoading = false);
+    }
+  }
+
+  Future<void> _promoteMember(Map<String, String> member) async {
+    final identity = member['identity'] ?? '';
+    if (identity.isEmpty || promotingMembers.contains(identity)) return;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Faire monter ce membre ?'),
+        content: Text('${member['name']} pourra prendre la parole dans le direct. Assurez-vous qu’il est prêt à activer son micro.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: const Text('Annuler')),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: const Text('Faire monter')),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => promotingMembers.add(identity));
+    try {
+      await liveService.promoteParticipant(identity);
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${member['name']} peut maintenant prendre la parole.')));
+    } catch (error) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error.toString().replaceFirst('Bad state: ', ''))));
+    } finally {
+      if (mounted) setState(() => promotingMembers.remove(identity));
+    }
+  }
   Future<void> _loadActivities() async {
     if (!mounted) return;
     setState(() { activitiesLoading = true; activitiesError = null; });
@@ -118,7 +168,7 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
   Future<void> _toggleMic() async { if (!live) { setState(() => liveError = 'Démarrez le direct avant de modifier le micro.'); return; } try { await liveService.setMicrophoneEnabled(!mic); if (mounted) setState(() { mic = !mic; liveError = null; }); } catch (error) { if (mounted) setState(() => liveError = error.toString().replaceFirst('Bad state: ', '')); } }
 
   @override
-  void dispose() { liveService.disconnect(); super.dispose(); }
+  void dispose() { memberSearchController.dispose(); liveService.disconnect(); super.dispose(); }
 
   Future<void> _invite() async {
     final name = TextEditingController();
@@ -236,7 +286,49 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
             if (liveError != null) ...[ const SizedBox(height: 10), Text(liveError!, style: const TextStyle(color: Color(0xFFFFB4AB), fontSize: 12, height: 1.4)), ],
           ]),
         );
-        final guestPanel = I24HCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        final guestPanel = Column(children: [
+          I24HCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              const Expanded(child: SectionTitle(title: 'Auditeurs en direct')),
+              IconButton(onPressed: membersLoading ? null : _refreshActiveMembers, tooltip: 'Actualiser les membres connectés', icon: const Icon(Icons.refresh_rounded)),
+            ]),
+            const Text('Recherchez les membres présents dans le direct et faites-les monter sur scène pour qu’ils puissent parler.', style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.4)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: memberSearchController,
+              onChanged: (value) => setState(() => memberSearch = value.trim().toLowerCase()),
+              decoration: const InputDecoration(labelText: 'Rechercher un auditeur', prefixIcon: Icon(Icons.search_rounded), hintText: 'Nom ou identifiant'),
+            ),
+            const SizedBox(height: 10),
+            if (!live) const Padding(padding: EdgeInsets.all(10), child: Text('Démarrez le direct pour voir les auditeurs connectés.', style: TextStyle(color: AppColors.muted)))
+            else if (membersLoading && activeMembers.isEmpty) const Center(child: Padding(padding: EdgeInsets.all(14), child: CircularProgressIndicator()))
+            else if (activeMembers.where((m) => ('${m['name']} ${m['identity']}').toLowerCase().contains(memberSearch)).isEmpty)
+              const Padding(padding: EdgeInsets.all(10), child: Text('Aucun auditeur correspondant. Actualisez la liste si quelqu’un vient de rejoindre.', style: TextStyle(color: AppColors.muted)))
+            else ...activeMembers.where((m) => ('${m['name']} ${m['identity']}').toLowerCase().contains(memberSearch)).map((member) {
+              final identity = member['identity']!;
+              final isPromoting = promotingMembers.contains(identity);
+              return Padding(padding: const EdgeInsets.only(bottom: 8), child: Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(color: const Color(0xFFF6F8FC), borderRadius: BorderRadius.circular(14)),
+                child: Row(children: [
+                  const CircleAvatar(backgroundColor: AppColors.sky, child: Icon(Icons.headphones_rounded, color: AppColors.blue)),
+                  const SizedBox(width: 9),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(member['name']!, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink)),
+                    Text('Auditeur connecté', style: const TextStyle(color: AppColors.muted, fontSize: 11)),
+                  ])),
+                  const SizedBox(width: 6),
+                  FilledButton.tonalIcon(
+                    onPressed: isPromoting ? null : () => _promoteMember(member),
+                    icon: isPromoting ? const SizedBox(width: 15, height: 15, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.mic_rounded, size: 17),
+                    label: const Text('Faire monter'),
+                  ),
+                ]),
+              ));
+            }),
+          ])),
+          const SizedBox(height: 12),
+          I24HCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             const Expanded(child: SectionTitle(title: 'Invitations au direct')),
             IconButton(onPressed: invitationsLoading ? null : _loadInvitations, tooltip: 'Actualiser', icon: const Icon(Icons.refresh_rounded)),
@@ -283,7 +375,8 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
                 ),
               );
             }),
-        ]));
+        ])),
+        ]);
         if (constraints.maxWidth >= 1000) return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(flex: 7, child: studio),
           const SizedBox(width: 18),
