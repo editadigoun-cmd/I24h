@@ -49,7 +49,7 @@ jobs:
                       break
               else:
                   raise SystemExit("Could not find the <manifest> tag.")
-              manifest.write_text("\\n".join(lines) + "\\n")
+              manifest.write_text("\n".join(lines) + "\n")
           print("Verified Android INTERNET permission.")
           PY
       - name: Get dependencies
