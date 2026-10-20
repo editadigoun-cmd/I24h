@@ -52,6 +52,29 @@ jobs:
               manifest.write_text("\n".join(lines) + "\n")
           print("Verified Android INTERNET permission.")
           PY
+      - name: Ensure Android live streaming permissions
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text()
+          permissions = [
+              '    <uses-permission android:name="android.permission.RECORD_AUDIO"/>',
+              '    <uses-permission android:name="android.permission.CAMERA"/>',
+          ]
+          missing = [p for p in permissions if p.split('"')[1] not in text]
+          if missing:
+              lines = text.splitlines()
+              index = next((i for i, line in enumerate(lines) if '<manifest' in line), None)
+              if index is None:
+                  raise SystemExit("Could not find the <manifest> tag.")
+              for offset, permission in enumerate(missing, start=1):
+                  lines.insert(index + offset, permission)
+              manifest.write_text("\n".join(lines) + "\n")
+          print("Verified microphone and camera permissions.")
+          PY
       - name: Get dependencies
         run: flutter pub get
       - name: Analyze
