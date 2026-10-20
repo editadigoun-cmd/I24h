@@ -4,7 +4,6 @@ import '../../core/widgets/app_widgets.dart';
 
 class AnimateurLiveScreen extends StatefulWidget {
   const AnimateurLiveScreen({super.key});
-
   @override
   State<AnimateurLiveScreen> createState() => _AnimateurLiveScreenState();
 }
@@ -12,138 +11,149 @@ class AnimateurLiveScreen extends StatefulWidget {
 class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
   bool live = false;
   bool mic = true;
+  bool camera = false;
+  bool screenShare = false;
+  int tab = 0;
+  final guests = <Map<String, dynamic>>[
+    {'name': 'Invité de démonstration', 'role': 'Invité', 'mic': false, 'camera': false},
+  ];
+  final intentions = [
+    ('Prière pour la famille', 'Il y a 4 min', 'À prendre en charge'),
+    ('Prière pour la guérison', 'Il y a 12 min', 'En prière'),
+    ('Prière pour le travail', 'Il y a 21 min', 'À prendre en charge'),
+  ];
+  final donations = [
+    ('Donateur anonyme', '5 000 FCFA', 'Il y a 2 min'),
+    ('Membre I24H', '10 000 FCFA', 'Il y a 8 min'),
+    ('Donateur anonyme', '2 500 FCFA', 'Il y a 16 min'),
+  ];
+
+  void _invite() {
+    final name = TextEditingController();
+    final email = TextEditingController();
+    showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(
+      title: const Text('Inviter une personne'),
+      content: Column(mainAxisSize: MainAxisSize.min, children: [
+        TextField(controller: name, decoration: const InputDecoration(labelText: 'Nom de l’invité', prefixIcon: Icon(Icons.person_outline))),
+        const SizedBox(height: 12),
+        TextField(controller: email, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Adresse e-mail', prefixIcon: Icon(Icons.mail_outline))),
+        const SizedBox(height: 10),
+        const Text('L’invitation réelle nécessitera le service de direct audio/vidéo et l’envoi d’e-mails.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
+      ]),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Annuler')),
+        FilledButton(onPressed: () {
+          if (name.text.trim().isEmpty || email.text.trim().isEmpty || !email.text.contains('@')) return;
+          setState(() => guests.add({'name': name.text.trim(), 'role': 'Invité', 'mic': false, 'camera': false}));
+          Navigator.pop(dialogContext);
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invité ajouté à la liste de préparation du studio.')));
+        }, child: const Text('Ajouter l’invité')),
+      ],
+    ));
+  }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(20),
-      children: [
-        const Text(
-          'Studio de diffusion',
-          style: TextStyle(
-            fontSize: 25,
-            fontWeight: FontWeight.w800,
-            color: AppColors.ink,
-          ),
-        ),
-        const SizedBox(height: 6),
-        const Text(
-          'Un espace simple pour piloter votre direct.',
-          style: TextStyle(color: AppColors.muted),
-        ),
-        const SizedBox(height: 18),
-        Container(
-          height: 210,
-          decoration: BoxDecoration(
-            color: AppColors.ink,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Center(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Container(
-                  width: 72,
-                  height: 72,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(.08),
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    live ? Icons.graphic_eq : Icons.mic_none_rounded,
-                    color: Colors.white,
-                    size: 32,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  live ? 'VOUS ÊTES EN DIRECT' : 'PRÊT À DIFFUSER',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 1.2,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  live ? 'Le Grand Direct · 14:00 — 18:00' : 'Aucun direct en cours',
-                  style: TextStyle(
-                    color: Colors.white.withOpacity(.7),
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: FilledButton.icon(
-                onPressed: () => setState(() => live = !live),
-                icon: Icon(live ? Icons.stop_rounded : Icons.play_arrow_rounded),
-                label: Text(live ? 'Arrêter le direct' : 'Démarrer le direct'),
-                style: FilledButton.styleFrom(
-                  backgroundColor: live ? AppColors.danger : AppColors.navy,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ),
+    final wide = MediaQuery.sizeOf(context).width >= 1000;
+    return ListView(padding: EdgeInsets.all(wide ? 28 : 18), children: [
+      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Studio de diffusion', style: TextStyle(fontSize: 29, fontWeight: FontWeight.w900, color: AppColors.ink, letterSpacing: -.7)),
+          SizedBox(height: 6),
+          Text('Préparez votre émission, gérez les invités et suivez la communauté en direct.', style: TextStyle(color: AppColors.muted, height: 1.5)),
+        ])),
+        const SizedBox(width: 10),
+        Container(padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9), decoration: BoxDecoration(color: live ? const Color(0xFFFFE9E7) : AppColors.sky, borderRadius: BorderRadius.circular(12)), child: Row(children: [
+          Icon(Icons.circle, size: 9, color: live ? AppColors.danger : AppColors.blue),
+          const SizedBox(width: 7),
+          Text(live ? 'EN DIRECT' : 'HORS LIGNE', style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: live ? AppColors.danger : AppColors.blue, letterSpacing: .5)),
+        ])),
+      ]),
+      const SizedBox(height: 22),
+      LayoutBuilder(builder: (context, constraints) {
+        final studio = Container(
+          padding: const EdgeInsets.all(22),
+          decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF07152E), Color(0xFF16386D)], begin: Alignment.topLeft, end: Alignment.bottomRight), borderRadius: BorderRadius.circular(25)),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Row(children: [
+              Container(width: 42, height: 42, decoration: BoxDecoration(color: Colors.white.withOpacity(.12), borderRadius: BorderRadius.circular(13)), child: const Icon(Icons.graphic_eq_rounded, color: AppColors.cyan, size: 24)),
+              const SizedBox(width: 12),
+              const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('LE GRAND DIRECT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17)),
+                SizedBox(height: 3),
+                Text('Studio principal · Diffusion I24H', style: TextStyle(color: Color(0xFFB8C9E5), fontSize: 12)),
+              ])),
+              if (live) const StatusPill(label: 'ON AIR', color: AppColors.danger),
+            ]),
+            const SizedBox(height: 25),
+            Container(height: 180, width: double.infinity, decoration: BoxDecoration(color: Colors.white.withOpacity(.06), borderRadius: BorderRadius.circular(19), border: Border.all(color: Colors.white.withOpacity(.1))), child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
+              Container(width: 70, height: 70, decoration: BoxDecoration(color: camera ? AppColors.blue.withOpacity(.35) : Colors.white.withOpacity(.09), shape: BoxShape.circle), child: Icon(camera ? Icons.videocam_rounded : Icons.mic_rounded, size: 32, color: Colors.white)),
+              const SizedBox(height: 13),
+              Text(camera ? 'CAMÉRA ACTIVÉE' : 'APERÇU DU STUDIO', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w900, letterSpacing: 1.2)),
+              const SizedBox(height: 5),
+              Text(live ? 'Votre émission est marquée comme en direct' : 'Activez vos équipements avant de démarrer', style: const TextStyle(color: Color(0xFFB8C9E5), fontSize: 11), textAlign: TextAlign.center),
+            ]))),
+            const SizedBox(height: 18),
+            Wrap(spacing: 9, runSpacing: 9, children: [
+              FilledButton.icon(onPressed: () => setState(() => live = !live), style: FilledButton.styleFrom(backgroundColor: live ? AppColors.danger : AppColors.success, foregroundColor: Colors.white), icon: Icon(live ? Icons.stop_rounded : Icons.sensors_rounded), label: Text(live ? 'Terminer le direct' : 'Démarrer le direct')),
+              OutlinedButton.icon(onPressed: () => setState(() => mic = !mic), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: BorderSide(color: mic ? Colors.white38 : AppColors.danger)), icon: Icon(mic ? Icons.mic_rounded : Icons.mic_off_rounded), label: Text(mic ? 'Micro actif' : 'Micro coupé')),
+              OutlinedButton.icon(onPressed: () => setState(() => camera = !camera), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38)), icon: Icon(camera ? Icons.videocam_rounded : Icons.videocam_off_rounded), label: Text(camera ? 'Caméra active' : 'Caméra coupée')),
+              OutlinedButton.icon(onPressed: () => setState(() => screenShare = !screenShare), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38)), icon: Icon(screenShare ? Icons.stop_screen_share_rounded : Icons.screen_share_rounded), label: Text(screenShare ? 'Arrêter partage' : 'Partager écran')),
+            ]),
+            const SizedBox(height: 13),
+            Text('Mode interface : les commandes visuelles sont prêtes. La diffusion réelle nécessite de connecter un fournisseur WebRTC/LiveKit/Agora.', style: TextStyle(color: Colors.white.withOpacity(.7), fontSize: 11, height: 1.5)),
+          ]),
+        );
+        final guestPanel = I24HCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [const Expanded(child: SectionTitle(title: 'Invités du direct')), IconButton.filledTonal(onPressed: _invite, icon: const Icon(Icons.person_add_alt_1_rounded), tooltip: 'Inviter un participant')]),
+          const SizedBox(height: 8),
+          ...guests.map((guest) => Padding(padding: const EdgeInsets.only(bottom: 10), child: Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: const Color(0xFFF6F8FC), borderRadius: BorderRadius.circular(15)), child: Row(children: [
+            CircleAvatar(backgroundColor: AppColors.sky, child: const Icon(Icons.person_rounded, color: AppColors.blue)),
             const SizedBox(width: 10),
-            IconButton.filledTonal(
-              onPressed: () => setState(() => mic = !mic),
-              icon: Icon(mic ? Icons.mic_rounded : Icons.mic_off_rounded),
-              tooltip: 'Microphone',
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        const SectionTitle(title: 'Contrôles'),
-        I24HCard(
-          child: Column(
-            children: [
-              _statusRow('Microphone', mic ? 'Actif' : 'Muet', mic),
-              _statusRow('Caméra', 'Prête', true),
-              _statusRow('Connexion', '18 Mbps · Stable', true),
-              _statusRow('Console', 'Opérationnelle', true),
-            ],
-          ),
-        ),
-        const SizedBox(height: 12),
-        const Text(
-          'Note : les commandes de direct sont actuellement une démonstration locale.',
-          style: TextStyle(color: AppColors.muted, fontSize: 12),
-        ),
-      ],
-    );
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(guest['name'] as String, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink)), const SizedBox(height: 3), Text(guest['role'] as String, style: const TextStyle(color: AppColors.muted, fontSize: 12))])),
+            IconButton(onPressed: () => setState(() => guest['mic'] = !(guest['mic'] as bool)), tooltip: (guest['mic'] as bool) ? 'Couper le micro' : 'Activer le micro', icon: Icon((guest['mic'] as bool) ? Icons.mic_rounded : Icons.mic_off_rounded, color: (guest['mic'] as bool) ? AppColors.success : AppColors.danger)),
+            IconButton(onPressed: () => setState(() => guest['camera'] = !(guest['camera'] as bool)), tooltip: (guest['camera'] as bool) ? 'Couper la caméra' : 'Activer la caméra', icon: Icon((guest['camera'] as bool) ? Icons.videocam_rounded : Icons.videocam_off_rounded, color: AppColors.blue)),
+            IconButton(onPressed: () => setState(() => guests.remove(guest)), tooltip: 'Retirer l’invité', icon: const Icon(Icons.person_remove_alt_1_rounded, color: AppColors.danger)),
+          ])))),
+          if (guests.isEmpty) const Padding(padding: EdgeInsets.all(12), child: Text('Aucun invité pour le moment.', style: TextStyle(color: AppColors.muted))),
+        ]));
+        if (constraints.maxWidth >= 1000) return Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(flex: 7, child: studio),
+          const SizedBox(width: 18),
+          Expanded(flex: 4, child: guestPanel),
+        ]);
+        return Column(children: [studio, const SizedBox(height: 16), guestPanel]);
+      }),
+      const SizedBox(height: 22),
+      Container(decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.line)), child: Column(children: [
+        Padding(padding: const EdgeInsets.all(8), child: Row(children: [
+          Expanded(child: _tabButton('Intentions de prière', Icons.volunteer_activism_outlined, 0)),
+          Expanded(child: _tabButton('Dons reçus', Icons.favorite_border_rounded, 1)),
+        ])),
+        const Divider(height: 1, color: AppColors.line),
+        Padding(padding: const EdgeInsets.all(16), child: tab == 0
+          ? Column(children: intentions.map((item) => Padding(padding: const EdgeInsets.only(bottom: 10), child: _activityRow(Icons.mark_chat_unread_outlined, item.$1, item.$2, item.$3, item.$3 == 'En prière' ? AppColors.success : AppColors.blue))).toList())
+          : Column(children: donations.map((item) => Padding(padding: const EdgeInsets.only(bottom: 10), child: _activityRow(Icons.favorite_rounded, item.$1, item.$3, item.$2, AppColors.success))).toList())),
+      ])),
+      const SizedBox(height: 12),
+      const Text('Les intentions et dons affichés ici sont des exemples de présentation. Ils seront alimentés par les données réelles dès que les règles d’accès et les événements du direct seront configurés.', style: TextStyle(color: AppColors.muted, fontSize: 12, height: 1.5)),
+    ]);
   }
 
-  Widget _statusRow(String title, String value, bool ok) {
-    final color = ok ? AppColors.success : AppColors.danger;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 7),
-      child: Row(
-        children: [
-          Icon(
-            ok ? Icons.check_circle_outline : Icons.pause_circle_outline,
-            color: color,
-            size: 20,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(title, style: const TextStyle(fontWeight: FontWeight.w700)),
-          ),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ],
-      ),
-    );
+  Widget _tabButton(String label, IconData icon, int value) {
+    final selected = tab == value;
+    return TextButton.icon(onPressed: () => setState(() => tab = value), icon: Icon(icon, size: 18, color: selected ? AppColors.blue : AppColors.muted), label: Text(label, style: TextStyle(color: selected ? AppColors.blue : AppColors.muted, fontWeight: FontWeight.w800, fontSize: 12)));
   }
+
+  Widget _activityRow(IconData icon, String title, String subtitle, String trailing, Color color) => Container(
+    padding: const EdgeInsets.all(13),
+    decoration: BoxDecoration(color: const Color(0xFFF7F9FD), borderRadius: BorderRadius.circular(15)),
+    child: Row(children: [
+      Container(width: 40, height: 40, decoration: BoxDecoration(color: color.withOpacity(.1), borderRadius: BorderRadius.circular(12)), child: Icon(icon, color: color)),
+      const SizedBox(width: 11),
+      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text(title, style: const TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink)), const SizedBox(height: 3), Text(subtitle, style: const TextStyle(fontSize: 12, color: AppColors.muted))])),
+      const SizedBox(width: 8),
+      Text(trailing, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: color)),
+    ]),
+  );
 }
