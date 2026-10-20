@@ -65,6 +65,18 @@ class I24HLiveService {
     }
   }
 
+  Future<void> setCameraEnabled(bool enabled) async {
+    final participant = _room?.localParticipant;
+    if (participant == null) throw StateError('Le studio n’est pas connecté.');
+    await participant.setCameraEnabled(enabled);
+  }
+
+  Future<void> setScreenShareEnabled(bool enabled) async {
+    final participant = _room?.localParticipant;
+    if (participant == null) throw StateError('Le studio n’est pas connecté.');
+    await participant.setScreenShareEnabled(enabled);
+  }
+
   Future<void> setMicrophoneEnabled(bool enabled) async {
     final participant = _room?.localParticipant;
     if (participant == null) {
