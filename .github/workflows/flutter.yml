@@ -21,8 +21,10 @@ jobs:
           channel: stable
           cache: true
       - name: Generate Android runner
-        run: flutter create --platforms=android --org com.i24h .
+        run: flutter create --platforms=android,web --org com.i24h .
       - name: Get dependencies
         run: flutter pub get
       - name: Analyze user app
         run: dart analyze lib/main.dart
+      - name: Build Flutter Web for Cloudflare
+        run: flutter build web --release
