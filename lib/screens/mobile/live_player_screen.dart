@@ -53,7 +53,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   }
 
   Future<void> _initializeVideo() async {
-    if (_videoUrl.isEmpty || _loading) return;
+    if (_videoUrl.isEmpty || _videoController?.value.isInitialized == true) return;
     setState(() {
       _loading = true;
       _errorMessage = null;
@@ -118,7 +118,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
           await _audioPlayer.pause();
           if (mounted) setState(() => _playing = false);
         } else {
-          await _audioPlayer.play();
+          unawaited(_audioPlayer.play());
           if (mounted) setState(() => _playing = true);
         }
       } catch (error) {
@@ -184,7 +184,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
           _audioOnly = true;
           _playing = true;
         });
-        await _audioPlayer.play();
+        unawaited(_audioPlayer.play());
       } else {
         await _audioPlayer.pause();
         if (!mounted) return;
