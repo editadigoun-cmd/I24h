@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/services/i24h_live_service.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_widgets.dart';
 
@@ -10,7 +12,10 @@ class AnimateurLiveScreen extends StatefulWidget {
 
 class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
   bool live = false;
-  bool mic = true;
+  bool mic = false;
+  bool busy = false;
+  String? liveError;
+  final I24HLiveService liveService = I24HLiveService();
   bool camera = false;
   bool screenShare = false;
   int tab = 0;
@@ -27,6 +32,13 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
     ('Membre I24H', '10 000 FCFA', 'Il y a 8 min'),
     ('Donateur anonyme', '2 500 FCFA', 'Il y a 16 min'),
   ];
+
+  Future<void> _toggleLive() async { if (busy) return; setState(() { busy = true; liveError = null; }); try { if (live) { await liveService.disconnect(); if (mounted) setState(() { live = false; mic = false; camera = false; }); } else { final user = Supabase.instance.client.auth.currentUser; final displayName = (user?.userMetadata?['full_name'] ?? user?.email?.split('@').first ?? 'Animateur I24H').toString(); await liveService.connect(participantName: displayName, publishAudio: true); if (mounted) setState(() { live = true; mic = true; }); } } catch (error) { if (mounted) setState(() => liveError = error.toString().replaceFirst('Bad state: ', '')); } finally { if (mounted) setState(() => busy = false); } }
+
+  Future<void> _toggleMic() async { if (!live) { setState(() => liveError = 'Démarrez le direct avant de modifier le micro.'); return; } try { await liveService.setMicrophoneEnabled(!mic); if (mounted) setState(() { mic = !mic; liveError = null; }); } catch (error) { if (mounted) setState(() => liveError = error.toString().replaceFirst('Bad state: ', '')); } }
+
+  @override
+  void dispose() { liveService.disconnect(); super.dispose(); }
 
   void _invite() {
     final name = TextEditingController();
@@ -95,13 +107,14 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
             ]))),
             const SizedBox(height: 18),
             Wrap(spacing: 9, runSpacing: 9, children: [
-              FilledButton.icon(onPressed: () => setState(() => live = !live), style: FilledButton.styleFrom(backgroundColor: live ? AppColors.danger : AppColors.success, foregroundColor: Colors.white), icon: Icon(live ? Icons.stop_rounded : Icons.sensors_rounded), label: Text(live ? 'Terminer le direct' : 'Démarrer le direct')),
-              OutlinedButton.icon(onPressed: () => setState(() => mic = !mic), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: BorderSide(color: mic ? Colors.white38 : AppColors.danger)), icon: Icon(mic ? Icons.mic_rounded : Icons.mic_off_rounded), label: Text(mic ? 'Micro actif' : 'Micro coupé')),
+              FilledButton.icon(onPressed: busy ? null : _toggleLive, style: FilledButton.styleFrom(backgroundColor: live ? AppColors.danger : AppColors.success, foregroundColor: Colors.white), icon: busy ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Icon(live ? Icons.stop_rounded : Icons.sensors_rounded), label: Text(busy ? 'Connexion…' : live ? 'Terminer le direct' : 'Démarrer le direct')),
+              OutlinedButton.icon(onPressed: busy ? null : _toggleMic, style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: BorderSide(color: mic ? Colors.white38 : AppColors.danger)), icon: Icon(mic ? Icons.mic_rounded : Icons.mic_off_rounded), label: Text(mic ? 'Micro actif' : 'Micro coupé')),
               OutlinedButton.icon(onPressed: () => setState(() => camera = !camera), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38)), icon: Icon(camera ? Icons.videocam_rounded : Icons.videocam_off_rounded), label: Text(camera ? 'Caméra active' : 'Caméra coupée')),
               OutlinedButton.icon(onPressed: () => setState(() => screenShare = !screenShare), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38)), icon: Icon(screenShare ? Icons.stop_screen_share_rounded : Icons.screen_share_rounded), label: Text(screenShare ? 'Arrêter partage' : 'Partager écran')),
             ]),
             const SizedBox(height: 13),
-            Text('Mode interface : les commandes visuelles sont prêtes. La diffusion réelle nécessite de connecter un fournisseur WebRTC/LiveKit/Agora.', style: TextStyle(color: Colors.white.withOpacity(.7), fontSize: 11, height: 1.5)),
+            Text(live ? 'Connecté à LiveKit : votre micro diffuse dans le salon I24H.' : 'Le direct utilise LiveKit. Autorisez l’accès au micro lorsque le téléphone le demande.', style: TextStyle(color: Colors.white.withOpacity(.7), fontSize: 11, height: 1.5)),
+            if (liveError != null) ...[ const SizedBox(height: 10), Text(liveError!, style: const TextStyle(color: Color(0xFFFFB4AB), fontSize: 12, height: 1.4)), ],
           ]),
         );
         final guestPanel = I24HCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
