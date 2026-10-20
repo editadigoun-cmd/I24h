@@ -1,5 +1,5 @@
 const LIVEKIT_URL = "wss://i24h-lsx4vdhf.livekit.cloud";
-const LIVEKIT_API_KEY = "API4WV59VsFVBo4";
+const LIVEKIT_API_KEY = "APIPYUuADbstEyG";
 const SUPABASE_URL = "https://pwujpjjoxxqupckurrad.supabase.co";
 const ROOM_NAME = "i24h-live";
 
@@ -20,7 +20,7 @@ function json(data, status = 200) {
 function base64url(bytes) {
   let binary = "";
   for (const byte of bytes) binary += String.fromCharCode(byte);
-  return btoa(binary).replace(/=/g, "").replace(/\+/g, "-").replace(/\//g, "_");
+  return btoa(binary).replace(/=/g, "").replace(/\\+/g, "-").replace(/\\//g, "_");
 }
 
 function encodeJson(value) {
@@ -48,6 +48,7 @@ export default {
         status: "ok",
         livekitConfigured: Boolean(env.LIVEKIT_API_SECRET),
         supabaseConfigured: Boolean(env.SUPABASE_ANON_KEY),
+        apiKeyConfigured: Boolean(LIVEKIT_API_KEY),
       });
     }
     if (request.method !== "POST" || url.pathname !== "/api/livekit/token") {
