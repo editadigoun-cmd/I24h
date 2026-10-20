@@ -194,7 +194,7 @@ class _LoginScreenState extends State<LoginScreen> {
       body: Stack(
         children: [
           Container(
-            height: 320,
+            height: 370,
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -281,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ),
           SafeArea(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(18, 236, 18, 30),
+              padding: const EdgeInsets.fromLTRB(18, 338, 18, 30),
               physics: const BouncingScrollPhysics(),
               child: Container(
                 padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
