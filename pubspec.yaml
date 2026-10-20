@@ -14,6 +14,8 @@ dependencies:
   just_audio: ^0.10.6
   video_player: ^2.10.0
   supabase_flutter: ^2.10.0
+  http: ^1.5.0
+  livekit_client: ^2.12.0
 
 # shared_preferences_android 2.5.0 has a known Android release crash
 # involving SharedPreferencesApiRegistrar.getAll (R8/Kotlin reflection).
