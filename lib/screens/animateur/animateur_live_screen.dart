@@ -1,4 +1,6 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../core/services/i24h_live_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
@@ -97,28 +99,66 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
   @override
   void dispose() { liveService.disconnect(); super.dispose(); }
 
-  void _invite() {
+  Future<void> _invite() async {
     final name = TextEditingController();
     final email = TextEditingController();
-    showDialog<void>(context: context, builder: (dialogContext) => AlertDialog(
-      title: const Text('Inviter une personne'),
-      content: Column(mainAxisSize: MainAxisSize.min, children: [
-        TextField(controller: name, decoration: const InputDecoration(labelText: 'Nom de l’invité', prefixIcon: Icon(Icons.person_outline))),
-        const SizedBox(height: 12),
-        TextField(controller: email, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Adresse e-mail', prefixIcon: Icon(Icons.mail_outline))),
-        const SizedBox(height: 10),
-        const Text('L’invitation réelle nécessitera le service de direct audio/vidéo et l’envoi d’e-mails.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
-      ]),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Annuler')),
-        FilledButton(onPressed: () {
-          if (name.text.trim().isEmpty || email.text.trim().isEmpty || !email.text.contains('@')) return;
-          setState(() => guests.add({'name': name.text.trim(), 'role': 'Invité', 'mic': false, 'camera': false}));
-          Navigator.pop(dialogContext);
-          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Invité ajouté à la liste de préparation du studio.')));
-        }, child: const Text('Ajouter l’invité')),
-      ],
-    ));
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Inviter un membre au direct'),
+        content: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(controller: name, decoration: const InputDecoration(labelText: 'Nom de l’invité', prefixIcon: Icon(Icons.person_outline))),
+          const SizedBox(height: 12),
+          TextField(controller: email, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(labelText: 'Adresse e-mail du compte I24H', prefixIcon: Icon(Icons.mail_outline))),
+          const SizedBox(height: 10),
+          const Text('L’invité doit se connecter à I24H avec cette adresse, puis saisir le code pour parler dans le direct.', style: TextStyle(color: AppColors.muted, fontSize: 12)),
+        ]),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Annuler')),
+          FilledButton(onPressed: () async {
+            final guestName = name.text.trim();
+            final guestEmail = email.text.trim().toLowerCase();
+            if (guestName.isEmpty || !guestEmail.contains('@') || guestEmail.endsWith('@')) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Renseignez un nom et une adresse e-mail valide.')));
+              return;
+            }
+            final user = Supabase.instance.client.auth.currentUser;
+            if (user == null) {
+              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Connectez-vous pour créer une invitation.')));
+              return;
+            }
+            final code = List<int>.generate(32, (_) => Random.secure().nextInt(256)).map((b) => b.toRadixString(16).padLeft(2, '0')).join();
+            try {
+              await Supabase.instance.client.from('live_guest_invitations').insert({
+                'invited_by': user.id,
+                'invited_email': guestEmail,
+                'invited_name': guestName,
+                'invite_code': code,
+                'expires_at': DateTime.now().toUtc().add(const Duration(hours: 24)).toIso8601String(),
+              });
+              if (!mounted) return;
+              Navigator.pop(dialogContext);
+              await showDialog<void>(context: context, builder: (ctx) => AlertDialog(
+                title: const Text('Invitation créée'),
+                content: SelectableText('Membre : $guestName\nE-mail : $guestEmail\n\nCode valable 24 h :\n$code\n\nEnvoyez ce code à la personne. Elle doit utiliser un compte I24H associé à cette adresse e-mail.'),
+                actions: [
+                  TextButton(onPressed: () async {
+                    await Clipboard.setData(ClipboardData(text: code));
+                    if (ctx.mounted) Navigator.pop(ctx);
+                    if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Code d’invitation copié.')));
+                  }, child: const Text('Copier le code')),
+                  FilledButton(onPressed: () => Navigator.pop(ctx), child: const Text('Fermer')),
+                ],
+              ));
+            } catch (error) {
+              if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Création impossible : $error')));
+            }
+          }, child: const Text('Créer l’invitation')),
+        ],
+      ),
+    );
+    name.dispose();
+    email.dispose();
   }
 
   @override
