@@ -7,6 +7,32 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../core/theme/app_theme.dart';
 import '../../core/widgets/app_widgets.dart';
 
+class _StudioIconButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool active;
+  final VoidCallback? onTap;
+  const _StudioIconButton({required this.icon, required this.label, this.active = false, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => Material(
+    color: active ? Colors.white.withOpacity(.22) : Colors.black.withOpacity(.42),
+    shape: const CircleBorder(),
+    child: InkWell(
+      onTap: onTap,
+      customBorder: const CircleBorder(),
+      child: SizedBox(
+        width: 42, height: 42,
+        child: Stack(alignment: Alignment.center, children: [
+          Icon(icon, color: Colors.white, size: 20),
+          if (label.isNotEmpty)
+            Positioned(right: 3, bottom: 3, child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.w900))),
+        ]),
+      ),
+    ),
+  );
+}
+
 class AnimateurLiveScreen extends StatefulWidget {
   const AnimateurLiveScreen({super.key});
   @override
@@ -293,66 +319,102 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
       const SizedBox(height: 22),
       LayoutBuilder(builder: (context, constraints) {
         final studio = Container(
-          padding: const EdgeInsets.all(22),
-          decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF07152E), Color(0xFF16386D)], begin: Alignment.topLeft, end: Alignment.bottomRight), borderRadius: BorderRadius.circular(25)),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              Container(width: 42, height: 42, decoration: BoxDecoration(color: Colors.white.withOpacity(.12), borderRadius: BorderRadius.circular(13)), child: const Icon(Icons.graphic_eq_rounded, color: AppColors.cyan, size: 24)),
-              const SizedBox(width: 12),
-              const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('LE GRAND DIRECT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 17)),
-                SizedBox(height: 3),
-                Text('Studio principal · Diffusion I24H', style: TextStyle(color: Color(0xFFB8C9E5), fontSize: 12)),
-              ])),
-              if (live) const StatusPill(label: 'ON AIR', color: AppColors.danger),
-            ]),
-            const SizedBox(height: 25),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(19),
-              child: Container(
-                height: 220,
-                width: double.infinity,
-                decoration: BoxDecoration(color: Colors.black, border: Border.all(color: Colors.white.withOpacity(.1))),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    if (camera && _localCameraTrack != null)
-                      VideoTrackRenderer(_localCameraTrack!, fit: VideoViewFit.cover)
-                    else
-                      Container(
-                        color: const Color(0xFF0B1B32),
-                        child: Center(child: Column(mainAxisSize: MainAxisSize.min, children: [
-                          Icon(camera ? Icons.videocam_off_rounded : Icons.videocam_rounded, size: 42, color: Colors.white70),
-                          const SizedBox(height: 10),
-                          Text(camera ? 'Caméra activée — aperçu en préparation' : 'Activez la caméra pour voir votre aperçu', style: const TextStyle(color: Colors.white, fontSize: 12), textAlign: TextAlign.center),
-                        ])),
+          decoration: BoxDecoration(
+            color: const Color(0xFF07152E),
+            borderRadius: BorderRadius.circular(constraints.maxWidth < 600 ? 20 : 25),
+            boxShadow: const [BoxShadow(color: Color(0x2207152E), blurRadius: 24, offset: Offset(0, 10))],
+          ),
+          clipBehavior: Clip.antiAlias,
+          child: AspectRatio(
+            aspectRatio: constraints.maxWidth < 600 ? 9 / 14 : 16 / 9,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                if (camera && _localCameraTrack != null)
+                  VideoTrackRenderer(_localCameraTrack!, fit: VideoViewFit.cover)
+                else
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [Color(0xFF102A4C), Color(0xFF07152E)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
                       ),
-                    Positioned(left: 12, top: 12, child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 6),
-                      decoration: BoxDecoration(color: live ? Colors.red.withOpacity(.9) : Colors.black54, borderRadius: BorderRadius.circular(20)),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.circle, color: Colors.white, size: 7),
-                        const SizedBox(width: 6),
-                        Text(live ? 'EN DIRECT' : 'APERÇU STUDIO', style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.w900)),
+                    ),
+                    child: Center(
+                      child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(camera ? Icons.videocam_off_rounded : Icons.graphic_eq_rounded, size: 44, color: Colors.white70),
+                        const SizedBox(height: 10),
+                        Text(camera ? 'Connexion de la caméra…' : 'I24H · Studio en attente',
+                          style: const TextStyle(color: Colors.white70, fontSize: 12)),
                       ]),
+                    ),
+                  ),
+                const DecoratedBox(decoration: BoxDecoration(
+                  gradient: LinearGradient(begin: Alignment.topCenter, end: Alignment.bottomCenter,
+                    colors: [Color(0x99000000), Colors.transparent, Colors.transparent, Color(0xCC000000)],
+                    stops: [0, .22, .58, 1]),
+                )),
+                Positioned(
+                  top: 12, left: 12, right: 12,
+                  child: Row(children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                      decoration: BoxDecoration(color: live ? const Color(0xFFE53945) : Colors.black45, borderRadius: BorderRadius.circular(20)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Icon(Icons.circle, size: 7, color: live ? Colors.white : Colors.white70),
+                        const SizedBox(width: 6),
+                        Text(live ? 'EN DIRECT' : 'APERÇU', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: .7)),
+                      ]),
+                    ),
+                    const Spacer(),
+                    _StudioIconButton(icon: Icons.people_alt_outlined, label: '${activeMembers.length}', onTap: _refreshActiveMembers),
+                    const SizedBox(width: 8),
+                    _StudioIconButton(icon: Icons.more_horiz_rounded, label: '', onTap: () => showModalBottomSheet<void>(
+                      context: context, backgroundColor: const Color(0xFF10213A),
+                      builder: (ctx) => SafeArea(child: Padding(padding: const EdgeInsets.all(20), child: Column(mainAxisSize: MainAxisSize.min, children: [
+                        ListTile(leading: const Icon(Icons.screen_share_rounded, color: Colors.white), title: const Text('Partager l’écran', style: TextStyle(color: Colors.white)), onTap: () { Navigator.pop(ctx); _toggleScreenShare(); }),
+                        ListTile(leading: const Icon(Icons.person_add_alt_1_rounded, color: Colors.white), title: const Text('Inviter un participant', style: TextStyle(color: Colors.white)), onTap: () { Navigator.pop(ctx); _invite(); }),
+                      ]))),
                     )),
-                    if (camera && _localCameraTrack != null)
-                      const Positioned(right: 10, bottom: 10, child: Icon(Icons.flip_camera_android_rounded, color: Colors.white70, size: 18)),
-                  ],
+                  ]),
                 ),
-              ),
+                Positioned(
+                  left: 12, right: 12, bottom: 14,
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    if (liveError != null)
+                      Container(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(color: Colors.black54, borderRadius: BorderRadius.circular(12)),
+                        child: Text(liveError!, style: const TextStyle(color: Color(0xFFFFD2D2), fontSize: 11)),
+                      ),
+                    Row(children: [
+                      _StudioIconButton(icon: mic ? Icons.mic_rounded : Icons.mic_off_rounded, label: '', active: mic, onTap: live ? _toggleMic : null),
+                      const SizedBox(width: 10),
+                      _StudioIconButton(icon: camera ? Icons.videocam_rounded : Icons.videocam_off_rounded, label: '', active: camera, onTap: live ? _toggleCamera : null),
+                      const Spacer(),
+                      FilledButton.icon(
+                        onPressed: busy ? null : _toggleLive,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: live ? const Color(0xFFE53945) : const Color(0xFF19A974),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                        ),
+                        icon: busy
+                          ? const SizedBox(width: 14, height: 14, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                          : Icon(live ? Icons.stop_rounded : Icons.sensors_rounded, size: 18),
+                        label: Text(busy ? 'Connexion…' : live ? 'Terminer' : 'Démarrer', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12)),
+                      ),
+                    ]),
+                    const SizedBox(height: 9),
+                    const Text('I24H · La foi en mouvement', style: TextStyle(color: Colors.white70, fontSize: 11, fontWeight: FontWeight.w600)),
+                  ]),
+                ),
+              ],
             ),
-            const SizedBox(height: 18),
-            Wrap(spacing: 9, runSpacing: 9, children: [
-              FilledButton.icon(onPressed: busy ? null : _toggleLive, style: FilledButton.styleFrom(backgroundColor: live ? AppColors.danger : AppColors.success, foregroundColor: Colors.white), icon: busy ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white)) : Icon(live ? Icons.stop_rounded : Icons.sensors_rounded), label: Text(busy ? 'Connexion…' : live ? 'Terminer le direct' : 'Démarrer le direct')),
-              OutlinedButton.icon(onPressed: busy ? null : _toggleMic, style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: BorderSide(color: mic ? Colors.white38 : AppColors.danger)), icon: Icon(mic ? Icons.mic_rounded : Icons.mic_off_rounded), label: Text(mic ? 'Micro actif' : 'Micro coupé')),
-              OutlinedButton.icon(onPressed: busy ? null : _toggleCamera, style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38)), icon: Icon(camera ? Icons.videocam_rounded : Icons.videocam_off_rounded), label: Text(camera ? 'Caméra active' : 'Caméra coupée')),
-              OutlinedButton.icon(onPressed: busy ? null : _toggleScreenShare, style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38)), icon: Icon(screenShare ? Icons.stop_screen_share_rounded : Icons.screen_share_rounded), label: Text(screenShare ? 'Arrêter partage' : 'Partager écran')),
-            ]),
-            const SizedBox(height: 13),
-            Text(live ? 'Connecté à LiveKit : votre micro diffuse dans le salon I24H.' : 'Le direct utilise LiveKit. Autorisez l’accès au micro lorsque le téléphone le demande.', style: TextStyle(color: Colors.white.withOpacity(.7), fontSize: 11, height: 1.5)),
-            if (liveError != null) ...[ const SizedBox(height: 10), Text(liveError!, style: const TextStyle(color: Color(0xFFFFB4AB), fontSize: 12, height: 1.4)), ],
-          ]),
+          ),
         );
         final guestPanel = Column(children: [
           I24HCard(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
