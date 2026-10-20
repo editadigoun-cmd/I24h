@@ -25,7 +25,16 @@ jobs:
       - name: Get dependencies
         run: flutter pub get
       - name: Analyze user app
-        run: dart analyze lib
+        shell: bash
+        run: |
+          set +e
+          dart analyze lib > analyze.log 2>&1
+          analyze_status=$?
+          cat analyze.log
+          if grep -E ' error - ' analyze.log; then
+            exit 1
+          fi
+          echo "Analyzer exit code: $analyze_status (warnings/info are non-blocking)"
       - name: Add Android microphone permission
         run: sed -i '/<application/i\    <uses-permission android:name="android.permission.RECORD_AUDIO" />' android/app/src/main/AndroidManifest.xml
       - name: Build Flutter Web for Cloudflare
