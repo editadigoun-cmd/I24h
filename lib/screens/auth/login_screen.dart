@@ -133,8 +133,20 @@ class _LoginScreenState extends State<LoginScreen> {
           email: emailValue,
           password: pass.text,
         );
+        final user = client.auth.currentUser;
+        var destination = '/mobile';
+        if (user != null) {
+          try {
+            final profile = await client.from('profiles').select('role').eq('id', user.id).maybeSingle();
+            final role = profile?['role'] as String?;
+            if (role == 'admin') destination = '/admin';
+            if (role == 'animateur') destination = '/animateur';
+          } catch (error) {
+            debugPrint('I24H role lookup failed: $error');
+          }
+        }
         if (mounted) {
-          Navigator.pushNamedAndRemoveUntil(context, '/mobile', (_) => false);
+          Navigator.pushNamedAndRemoveUntil(context, destination, (_) => false);
         }
       }
     } on AuthException catch (error) {
