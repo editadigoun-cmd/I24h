@@ -33,6 +33,28 @@ jobs:
           cache: true
       - name: Create Android and web platform files if missing
         run: flutter create . --platforms=android,web --project-name=i24h
+      - name: Ensure Android Internet permission
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          if not manifest.exists():
+              raise SystemExit(f"Android manifest not found: {manifest}")
+
+          text = manifest.read_text()
+          permission = 'android.permission.INTERNET'
+          if permission not in text:
+              match = re.search(r'<manifest\\b[^>]*>', text)
+              if not match:
+                  raise SystemExit("Could not find the <manifest> tag.")
+              insertion = '\\n    <uses-permission android:name="android.permission.INTERNET"/>'
+              text = text[:match.end()] + insertion + text[match.end():]
+              manifest.write_text(text)
+          print("Verified Android INTERNET permission.")
+          PY
       - name: Get dependencies
         run: flutter pub get
       - name: Analyze
