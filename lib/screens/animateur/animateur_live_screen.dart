@@ -512,7 +512,36 @@ class _AnimateurLiveScreenState extends State<AnimateurLiveScreen> {
           const SizedBox(width: 18),
           Expanded(flex: 4, child: guestPanel),
         ]);
-        return Column(children: [studio, const SizedBox(height: 16), guestPanel]);
+        return Column(children: [
+          studio,
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: busy ? null : _toggleLive,
+              style: FilledButton.styleFrom(
+                backgroundColor: live ? const Color(0xFFE53945) : const Color(0xFF19A974),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 17, horizontal: 18),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              ),
+              icon: busy
+                  ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                  : Icon(live ? Icons.stop_circle_rounded : Icons.sensors_rounded, size: 24),
+              label: Text(
+                busy ? 'Connexion au direct…' : live ? 'ARRÊTER LE DIRECT' : 'DÉMARRER LE DIRECT',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w900, letterSpacing: .3),
+              ),
+            ),
+          ),
+          if (liveError != null)
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Text(liveError!, style: const TextStyle(color: AppColors.danger, fontSize: 12)),
+            ),
+          const SizedBox(height: 16),
+          guestPanel,
+        ]);
       }),
       const SizedBox(height: 22),
       Container(decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20), border: Border.all(color: AppColors.line)), child: Column(children: [
