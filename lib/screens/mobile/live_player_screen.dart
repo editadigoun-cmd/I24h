@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:video_player/video_player.dart' hide VideoTrack;
 import 'package:livekit_client/livekit_client.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../core/config/i24h_config.dart';
 import '../../core/services/i24h_live_service.dart';
@@ -206,6 +207,73 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
       if (mounted) {
         setState(() => _errorMessage = 'La lecture vidéo a été interrompue. Réessayez.');
       }
+    }
+  }
+
+  Future<void> _joinAsGuest() async {
+    if (_loading || !widget.isLive) return;
+    final codeController = TextEditingController();
+    final code = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Rejoindre comme invité'),
+        content: TextField(
+          controller: codeController,
+          autofocus: true,
+          textCapitalization: TextCapitalization.none,
+          decoration: const InputDecoration(
+            labelText: 'Code d’invitation',
+            hintText: 'Collez le code reçu',
+            prefixIcon: Icon(Icons.key_rounded),
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Annuler')),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, codeController.text.trim()),
+            child: const Text('Continuer'),
+          ),
+        ],
+      ),
+    );
+    codeController.dispose();
+    if (!mounted || code == null || code.isEmpty) return;
+
+    setState(() { _loading = true; _errorMessage = null; });
+    try {
+      if (_liveService.isConnected) {
+        await _roomListener?.dispose();
+        _roomListener = null;
+        await _liveService.disconnect();
+      }
+      final user = Supabase.instance.client.auth.currentUser;
+      final displayName = (user?.userMetadata?['full_name'] ??
+          user?.email?.split('@').first ?? 'Invité I24H').toString();
+      final room = await _liveService.connect(
+        participantName: displayName,
+        publishAudio: true,
+        invitationCode: code,
+      );
+      final listener = room.createListener();
+      listener.on<TrackSubscribedEvent>((event) {
+        if (event.track is VideoTrack && mounted) {
+          setState(() => _remoteVideoTrack = event.track as VideoTrack);
+        }
+      });
+      listener.on<TrackUnsubscribedEvent>((event) {
+        if (event.track is VideoTrack && mounted) setState(() => _remoteVideoTrack = null);
+      });
+      _roomListener = listener;
+      if (mounted) setState(() { _playing = true; _remoteVideoTrack = null; });
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _playing = false;
+          _errorMessage = error.toString().replaceFirst('Bad state: ', '');
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
@@ -435,6 +503,20 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                           ),
                         ],
                       ),
+                      if (widget.isLive) ...[
+                        const SizedBox(height: 10),
+                        OutlinedButton.icon(
+                          onPressed: _loading ? null : _joinAsGuest,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.cyan,
+                            side: const BorderSide(color: Color(0x557E9BC3)),
+                            minimumSize: const Size(double.infinity, 50),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          ),
+                          icon: const Icon(Icons.record_voice_over_rounded),
+                          label: const Text('J’ai un code d’invitation pour parler', style: TextStyle(fontWeight: FontWeight.w800)),
+                        ),
+                      ],
                       if (_errorMessage != null) ...[
                         const SizedBox(height: 14),
                         Container(
