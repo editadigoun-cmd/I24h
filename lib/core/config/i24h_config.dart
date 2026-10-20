@@ -29,8 +29,10 @@ class I24HConfig {
   );
 
   static bool backendReady = false;
+  static String? backendError;
 
   static bool get hasSupabaseConfig =>
       supabaseUrl.startsWith('https://') &&
-      supabasePublishableKey.isNotEmpty;
+      supabasePublishableKey.startsWith('sb_publishable_') &&
+      supabasePublishableKey.length > 20;
 }
