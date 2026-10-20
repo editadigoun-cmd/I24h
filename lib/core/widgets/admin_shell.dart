@@ -72,7 +72,7 @@ class _AdminShellState extends State<AdminShell> {
         ),
         Expanded(child: AnimatedSwitcher(duration: const Duration(milliseconds: 220), child: KeyedSubtree(key: ValueKey(index), child: pages[index]))),
       ]),
-      bottomNavigationBar: !wide ? NavigationBar(height: 72, selectedIndex: index > 3 ? 0 : index, onDestinationSelected: (v) => setState(() => index = v), destinations: const [
+      bottomNavigationBar: !wide ? NavigationBar(height: 72, selectedIndex: index > 3 ? 0 : index, onDestinationSelected: (v) => setState(() => index = [0, 1, 2, 7][v]), destinations: const [
         NavigationDestination(icon: Icon(Icons.grid_view_rounded), label: 'Accueil'),
         NavigationDestination(icon: Icon(Icons.calendar_month_rounded), label: 'Planning'),
         NavigationDestination(icon: Icon(Icons.mic_external_on_rounded), label: 'Équipe'),
