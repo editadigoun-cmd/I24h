@@ -113,6 +113,41 @@ export default {
     const role = Array.isArray(profiles) && profiles[0] ? String(profiles[0].role || "").toLowerCase() : "";
     let canPublish = role === "admin" || role === "administrateur" || role === "animateur";
 
+    // An animator may publish only during a published program assigned to the
+    // exact profile name. The database clock is used to avoid trusting a device clock.
+    // Admins retain operational access for emergency continuity.
+    let assignedSlot = null;
+    if (role === "animateur" && isTokenRoute && !invitationCode) {
+      const profileResponse = await fetch(
+        SUPABASE_URL + "/rest/v1/profiles?id=eq." + encodeURIComponent(user.id) + "&select=full_name&limit=1",
+        { headers: { "Authorization": authorization, "apikey": env.SUPABASE_ANON_KEY } }
+      );
+      if (!profileResponse.ok) return json({ error: "Impossible de vérifier le profil animateur." }, 403);
+      const profileRows = await profileResponse.json();
+      const fullName = Array.isArray(profileRows) && profileRows[0]
+        ? String(profileRows[0].full_name || "").trim() : "";
+      if (!fullName) return json({ error: "Votre profil animateur n’a pas de nom complet configuré." }, 403);
+
+      const nowIso = new Date().toISOString();
+      const slotUrl = SUPABASE_URL + "/rest/v1/programs?select=id,title,starts_at,ends_at,presenter"
+        + "&is_published=eq.true&presenter=eq." + encodeURIComponent(fullName)
+        + "&starts_at=lte." + encodeURIComponent(nowIso)
+        + "&ends_at=gt." + encodeURIComponent(nowIso)
+        + "&order=starts_at.desc&limit=1";
+      const slotResponse = await fetch(slotUrl, {
+        headers: { "Authorization": authorization, "apikey": env.SUPABASE_ANON_KEY },
+      });
+      if (!slotResponse.ok) return json({ error: "Impossible de vérifier votre créneau de direct." }, 503);
+      const slots = await slotResponse.json();
+      assignedSlot = Array.isArray(slots) && slots.length ? slots[0] : null;
+      if (!assignedSlot || !assignedSlot.ends_at) {
+        return json({
+          error: "Aucun créneau de direct actif ne vous est attribué. Le direct est réservé aux animateurs programmés et uniquement pendant leur horaire.",
+          code: "NO_ACTIVE_SLOT",
+        }, 403);
+      }
+    }
+
     if (isPromoteRoute) {
       if (!canPublish) return json({ error: "Seuls les administrateurs et animateurs peuvent faire monter un auditeur." }, 403);
       const identity = typeof body.identity === "string" ? body.identity.trim() : "";
@@ -167,12 +202,15 @@ export default {
     }
 
     const now = Math.floor(Date.now() / 1000);
+    const slotEndEpoch = assignedSlot ? Math.floor(Date.parse(assignedSlot.ends_at) / 1000) : null;
+    const tokenExpiry = slotEndEpoch ? Math.min(now + 3600, slotEndEpoch) : now + 3600;
+    if (tokenExpiry <= now) return json({ error: "Votre créneau de direct est terminé.", code: "SLOT_ENDED" }, 403);
     const token = await signJwt({
       iss: LIVEKIT_API_KEY,
       sub: user.id,
       nbf: now - 5,
       iat: now,
-      exp: now + 3600,
+      exp: tokenExpiry,
       name: participantName || "Participant I24H",
       video: {
         roomJoin: true,
@@ -187,8 +225,9 @@ export default {
       server_url: LIVEKIT_URL,
       participant_token: token,
       room_name: ROOM_NAME,
-      role: canPublish ? (role === "admin" || role === "administrateur" || role === "animateur" ? "speaker" : "guest-speaker") : "listener",
-      expires_in: 3600,
+      role: canPublish ? (role === "admin" || role === "administrateur" ? "admin-speaker" : role === "animateur" ? "scheduled-animator" : "guest-speaker") : "listener",
+      expires_in: Math.max(0, tokenExpiry - now),
+      ...(assignedSlot ? { scheduled_program: { id: assignedSlot.id, title: assignedSlot.title, starts_at: assignedSlot.starts_at, ends_at: assignedSlot.ends_at } } : {}),
     }, 201);
   },
 };
