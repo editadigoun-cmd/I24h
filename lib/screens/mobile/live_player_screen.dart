@@ -39,6 +39,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   EventsListener<RoomEvent>? _roomListener;
   VideoTrack? _remoteVideoTrack;
   bool _guestMicEnabled = false;
+  bool _canSpeak = false;
 
   String get _videoUrl => widget.isLive ? I24HConfig.liveVideoUrl.trim() : '';
 
@@ -124,7 +125,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
           await _roomListener?.dispose();
           _roomListener = null;
           await _liveService.disconnect();
-          if (mounted) setState(() { _playing = false; _remoteVideoTrack = null; });
+          if (mounted) setState(() { _playing = false; _remoteVideoTrack = null; _canSpeak = false; _guestMicEnabled = false; _audioOnly = false; });
         } else {
           final room = await _liveService.connect(participantName: 'Auditeur I24H', publishAudio: false);
           final listener = room.createListener();
@@ -145,7 +146,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
             }
             if (existingVideo != null) break;
           }
-          if (mounted) setState(() { _playing = true; _remoteVideoTrack = existingVideo; });
+          if (mounted) setState(() { _playing = true; _remoteVideoTrack = existingVideo; _canSpeak = false; _guestMicEnabled = false; });
         }
       } catch (error) {
         if (mounted) setState(() { _playing = false; _errorMessage = error.toString().replaceFirst('Bad state: ', ''); });
@@ -284,7 +285,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
         if (event.track is VideoTrack && mounted) setState(() => _remoteVideoTrack = null);
       });
       _roomListener = listener;
-      if (mounted) setState(() { _playing = true; _remoteVideoTrack = null; });
+      if (mounted) setState(() { _playing = true; _remoteVideoTrack = null; _canSpeak = true; _guestMicEnabled = true; });
     } catch (error) {
       if (mounted) {
         setState(() {
@@ -299,10 +300,9 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
 
   Future<void> _setAudioOnly(bool enabled) async {
     if (!widget.isLive || _audioOnly == enabled) return;
-    if (enabled && _audioUrl.isEmpty) {
-      setState(() {
-        _errorMessage = 'Le mode écoute seule nécessite un flux audio dédié fourni par le service de streaming.';
-      });
+    final room = _liveService.room;
+    if (room == null) {
+      setState(() => _errorMessage = 'Rejoignez le direct avant de changer de mode d’écoute.');
       return;
     }
 
@@ -311,35 +311,44 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
       _errorMessage = null;
     });
     try {
+      // Stop subscribing to remote video tracks to reduce mobile data usage;
+      // LiveKit audio continues in the same room, without a separate audio URL.
+      for (final participant in room.remoteParticipants.values) {
+        for (final publication in participant.videoTrackPublications) {
+          if (enabled) {
+            await publication.unsubscribe();
+          } else {
+            await publication.subscribe();
+          }
+        }
+      }
       if (enabled) {
         await _videoController?.pause();
-        await _audioPlayer.setUrl(_audioUrl);
+        await room.startAudio();
         if (!mounted) return;
         setState(() {
           _audioOnly = true;
+          _remoteVideoTrack = null;
           _playing = true;
         });
-        unawaited(_audioPlayer.play());
       } else {
-        await _audioPlayer.pause();
         if (!mounted) return;
         setState(() {
           _audioOnly = false;
-          _playing = false;
+          _playing = true;
         });
         if (_videoController == null && _videoUrl.isNotEmpty) {
           await _initializeVideo();
         } else if (_videoController?.value.isInitialized == true) {
           await _videoController!.play();
-          if (mounted) setState(() => _playing = true);
         }
       }
     } catch (error) {
       if (mounted) {
         setState(() {
           _errorMessage = enabled
-              ? 'Impossible de démarrer le flux audio seul.'
-              : 'Impossible de reprendre la vidéo.';
+              ? 'Impossible d’activer le mode écoute seule. Réessayez.'
+              : 'Impossible de réactiver la vidéo. Réessayez.';
         });
       }
       debugPrint('I24H playback mode error: $error');
@@ -383,13 +392,6 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                           textAlign: TextAlign.center,
                           style: TextStyle(color: Color(0xFFB7C9E4), fontSize: 10, letterSpacing: 1.8, fontWeight: FontWeight.w900),
                         ),
-                      ),
-                      IconButton(
-                        tooltip: 'Partager',
-                        onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Le partage du direct sera relié dans la prochaine étape.')),
-                        ),
-                        icon: const Icon(Icons.ios_share_rounded, color: Colors.white70),
                       ),
                     ],
                   ),
@@ -523,7 +525,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                           ),
                         ],
                       ),
-                      if (widget.isLive && _liveService.isConnected) ...[
+                      if (widget.isLive && _liveService.isConnected && _canSpeak) ...[
                         const SizedBox(height: 10),
                         OutlinedButton.icon(
                           onPressed: _loading ? null : _toggleGuestMicrophone,
