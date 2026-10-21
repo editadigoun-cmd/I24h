@@ -39,8 +39,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     ),
   ];
 
+  void _openApp() {
+    Navigator.pushReplacementNamed(context, '/mobile');
+  }
+
   void _openLogin() {
-    Navigator.pushReplacementNamed(context, '/login');
+    Navigator.pushNamed(context, '/login');
   }
 
   void _next() {
@@ -50,7 +54,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         curve: Curves.easeOutCubic,
       );
     } else {
-      _openLogin();
+      _openApp();
     }
   }
 
@@ -120,7 +124,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   const Spacer(),
                   TextButton(
-                    onPressed: _openLogin,
+                    onPressed: _openApp,
                     child: const Text(
                       'Passer',
                       style: TextStyle(
@@ -194,7 +198,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 8),
+                  TextButton(
+                    onPressed: _openLogin,
+                    child: const Text('J’ai déjà un compte — Se connecter'),
+                  ),
+                  const SizedBox(height: 6),
                   const Text(
                     'UN ESPACE DE FOI. UNE COMMUNAUTÉ. UN MÊME ÉLAN.',
                     textAlign: TextAlign.center,
