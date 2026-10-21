@@ -30,7 +30,9 @@ class _UserAppScreenState extends State<UserAppScreen> {
     super.initState();
     _programsFuture = I24HBackend.publishedPrograms();
     _replaysFuture = I24HBackend.publishedReplays();
-    _intentionsFuture = I24HBackend.myPrayerIntentions();
+    _intentionsFuture = Supabase.instance.client.auth.currentUser == null
+        ? Future.value(<Map<String, dynamic>>[])
+        : I24HBackend.myPrayerIntentions();
   }
 
   final titles = const ['Accueil', 'Programme', 'Replay', 'Intentions', 'Profil'];
@@ -193,7 +195,32 @@ class _UserAppScreenState extends State<UserAppScreen> {
     }
   }
 
-  Widget _intentions() => FutureBuilder<List<Map<String, dynamic>>>(
+  Widget _intentions() {
+    final signedIn = I24HConfig.backendReady &&
+        Supabase.instance.client.auth.currentUser != null;
+    if (!signedIn) {
+      return ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          const SizedBox(height: 30),
+          const Icon(Icons.favorite_rounded, size: 48, color: AppColors.blue),
+          const SizedBox(height: 18),
+          const Text('Vos intentions de prière', textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.w900)),
+          const SizedBox(height: 10),
+          const Text('Connectez-vous pour déposer vos intentions et retrouver leur suivi en toute confidentialité. Le direct, le programme et les replays restent accessibles sans compte.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.muted, height: 1.5)),
+          const SizedBox(height: 22),
+          SizedBox(height: 52, child: FilledButton.icon(
+            onPressed: () => Navigator.pushNamed(context, '/login'),
+            icon: const Icon(Icons.lock_open_rounded),
+            label: const Text('Se connecter ou créer un compte'),
+          )),
+        ],
+      );
+    }
+    return FutureBuilder<List<Map<String, dynamic>>>(
         future: _intentionsFuture,
         builder: (context, snapshot) {
           final items = snapshot.data ?? [];
@@ -227,6 +254,7 @@ class _UserAppScreenState extends State<UserAppScreen> {
           );
         },
       );
+  }
 
   Widget _profile(BuildContext context) {
     final user = I24HConfig.backendReady ? Supabase.instance.client.auth.currentUser : null;
@@ -244,7 +272,11 @@ class _UserAppScreenState extends State<UserAppScreen> {
         _setting(Icons.info_outline_rounded, 'À propos de I24H', _about),
         _setting(Icons.help_outline_rounded, 'Aide & assistance', _help),
         _setting(Icons.shield_outlined, 'Confidentialité', _privacy),
-        _setting(Icons.logout_rounded, 'Se déconnecter', _signOut),
+        if (user == null)
+          _setting(Icons.login_rounded, 'Se connecter ou créer un compte',
+              () => Navigator.pushNamed(context, '/login'))
+        else
+          _setting(Icons.logout_rounded, 'Se déconnecter', _signOut),
       ],
     );
   }
@@ -309,6 +341,13 @@ class _UserAppScreenState extends State<UserAppScreen> {
   }
 
   Future<void> _add() async {
+    final user = I24HConfig.backendReady
+        ? Supabase.instance.client.auth.currentUser
+        : null;
+    if (user == null) {
+      if (mounted) Navigator.pushNamed(context, '/login');
+      return;
+    }
     final controller = TextEditingController();
     final message = await showDialog<String>(
       context: context,
