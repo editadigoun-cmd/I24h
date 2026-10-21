@@ -22,6 +22,8 @@ jobs:
           cache: true
       - name: Generate Android runner
         run: flutter create --platforms=android,ios,web --org com.i24h .
+      - name: Remove generated placeholder test
+        run: rm -f test/widget_test.dart
       - name: Get dependencies
         run: flutter pub get
       - name: Run widget smoke tests
