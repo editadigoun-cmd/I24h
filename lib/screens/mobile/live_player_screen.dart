@@ -229,7 +229,23 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
           await _liveService.disconnect();
           if (mounted) setState(() { _playing = false; _remoteVideoTrack = null; _canSpeak = false; _guestMicEnabled = false; _audioOnly = false; });
         } else {
-          final room = await _liveService.connect(participantName: 'Auditeur I24H', publishAudio: false);
+          await _loadAnimatorSchedule();
+          final scheduledStart = DateTime.tryParse('${_assignedProgram?['starts_at'] ?? ''}')?.toLocal();
+          final scheduledEnd = DateTime.tryParse('${_assignedProgram?['ends_at'] ?? ''}')?.toLocal();
+          final now = DateTime.now();
+          final animatorOnAir = _isAnimator && scheduledStart != null && scheduledEnd != null &&
+              !now.isBefore(scheduledStart) && now.isBefore(scheduledEnd);
+          final room = await _liveService.connect(
+            participantName: Supabase.instance.client.auth.currentUser?.userMetadata?['full_name']?.toString() ?? 'Animateur I24H',
+            publishAudio: animatorOnAir,
+          );
+          if (animatorOnAir) {
+            try {
+              await room.localParticipant?.setCameraEnabled(true);
+            } catch (cameraError) {
+              debugPrint('I24H animator camera unavailable: $cameraError');
+            }
+          }
           final listener = room.createListener();
           listener.on<TrackSubscribedEvent>((event) {
             if (event.track is VideoTrack && mounted) {
@@ -248,7 +264,12 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
             }
             if (existingVideo != null) break;
           }
-          if (mounted) setState(() { _playing = true; _remoteVideoTrack = existingVideo; _canSpeak = false; _guestMicEnabled = false; });
+          if (mounted) setState(() {
+            _playing = true;
+            _remoteVideoTrack = existingVideo;
+            _canSpeak = animatorOnAir;
+            _guestMicEnabled = animatorOnAir;
+          });
         }
       } catch (error) {
         if (mounted) setState(() { _playing = false; _errorMessage = error.toString().replaceFirst('Bad state: ', ''); });
