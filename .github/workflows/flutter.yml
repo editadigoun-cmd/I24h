@@ -24,6 +24,8 @@ jobs:
         run: flutter create --platforms=android,ios,web --org com.i24h .
       - name: Get dependencies
         run: flutter pub get
+      - name: Run widget smoke tests
+        run: flutter test
       - name: Analyze user app
         shell: bash
         run: |
