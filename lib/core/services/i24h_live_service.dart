@@ -23,16 +23,18 @@ class I24HLiveService {
     if (_room != null) return _room!;
 
     final session = Supabase.instance.client.auth.currentSession;
-    if (session == null || session.accessToken.isEmpty) {
-      throw StateError('Connectez-vous à votre compte I24H avant de rejoindre le direct.');
+    if ((invitationCode?.trim().isNotEmpty ?? false) &&
+        (session == null || session.accessToken.isEmpty)) {
+      throw StateError('Connectez-vous à votre compte I24H pour utiliser un code d’invitation.');
     }
 
+    final headers = <String, String>{'Content-Type': 'application/json'};
+    if (session != null && session.accessToken.isNotEmpty) {
+      headers['Authorization'] = 'Bearer ${session.accessToken}';
+    }
     final response = await http.post(
       Uri.parse(tokenEndpoint),
-      headers: {
-        'Authorization': 'Bearer ${session.accessToken}',
-        'Content-Type': 'application/json',
-      },
+      headers: headers,
       body: jsonEncode({
         'participant_name': participantName,
         if (invitationCode != null && invitationCode.trim().isNotEmpty)
