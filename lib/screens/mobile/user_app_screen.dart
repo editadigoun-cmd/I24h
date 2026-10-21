@@ -39,7 +39,16 @@ class _UserAppScreenState extends State<UserAppScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final pages = [const HomeScreen(), _program(), _replay(), _intentions(), _profile(context)];
+    final pages = [
+      HomeScreen(
+        onOpenProgramme: () => setState(() => tab = 1),
+        onOpenIntentions: () => setState(() => tab = 3),
+      ),
+      _program(),
+      _replay(),
+      _intentions(),
+      _profile(context),
+    ];
     return Scaffold(
       appBar: tab == 0 ? null : AppBar(
         title: Text(titles[tab], style: const TextStyle(fontWeight: FontWeight.w800)),
