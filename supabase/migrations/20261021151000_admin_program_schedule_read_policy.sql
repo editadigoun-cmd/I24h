@@ -1,9 +1,10 @@
-create policy "Admins can read all programs"
-on public.programs for select to authenticated
-using (
-  exists (
-    select 1 from public.profiles p
-    where p.id = (select auth.uid())
-      and lower(p.role) in ('admin', 'administrateur')
+DROP POLICY IF EXISTS "Admins can read all programs" ON public.programs;
+CREATE POLICY "Admins can read all programs"
+ON public.programs FOR SELECT TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles p
+    WHERE p.id = (SELECT auth.uid())
+      AND lower(p.role) IN ('admin', 'administrateur')
   )
 );
