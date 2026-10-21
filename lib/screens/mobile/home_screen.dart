@@ -51,14 +51,6 @@ class HomeScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                    IconButton(
-                      tooltip: 'Notifications',
-                      onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Les notifications seront disponibles prochainement.')),
-                      ),
-                      style: IconButton.styleFrom(backgroundColor: Colors.white),
-                      icon: const Icon(Icons.notifications_none_rounded, color: AppColors.navy),
-                    ),
                   ],
                 ),
                 const SizedBox(height: 30),
