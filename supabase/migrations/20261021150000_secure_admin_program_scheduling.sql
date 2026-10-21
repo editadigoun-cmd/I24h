@@ -1,54 +1,56 @@
-alter table public.programs
-  add constraint programs_valid_slot
-  check (ends_at is null or ends_at > starts_at);
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conname = 'programs_valid_slot'
+      AND conrelid = 'public.programs'::regclass
+  ) THEN
+    ALTER TABLE public.programs
+      ADD CONSTRAINT programs_valid_slot
+      CHECK (ends_at IS NULL OR ends_at > starts_at);
+  END IF;
+END $$;
 
-create index if not exists programs_published_schedule_idx
-  on public.programs (starts_at, ends_at)
-  where is_published = true;
+CREATE INDEX IF NOT EXISTS programs_published_schedule_idx
+  ON public.programs (starts_at, ends_at)
+  WHERE is_published = true;
 
-create policy "Admins can insert programs"
-on public.programs for insert to authenticated
-with check (
-  exists (
-    select 1 from public.profiles p
-    where p.id = (select auth.uid())
-      and lower(p.role) in ('admin', 'administrateur')
+DROP POLICY IF EXISTS "Admins can insert programs" ON public.programs;
+CREATE POLICY "Admins can insert programs"
+ON public.programs FOR INSERT TO authenticated
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.profiles p
+    WHERE p.id = (SELECT auth.uid())
+      AND lower(p.role) IN ('admin', 'administrateur')
   )
 );
 
-create policy "Admins can update programs"
-on public.programs for update to authenticated
-using (
-  exists (
-    select 1 from public.profiles p
-    where p.id = (select auth.uid())
-      and lower(p.role) in ('admin', 'administrateur')
+DROP POLICY IF EXISTS "Admins can update programs" ON public.programs;
+CREATE POLICY "Admins can update programs"
+ON public.programs FOR UPDATE TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles p
+    WHERE p.id = (SELECT auth.uid())
+      AND lower(p.role) IN ('admin', 'administrateur')
   )
 )
-with check (
-  exists (
-    select 1 from public.profiles p
-    where p.id = (select auth.uid())
-      and lower(p.role) in ('admin', 'administrateur')
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM public.profiles p
+    WHERE p.id = (SELECT auth.uid())
+      AND lower(p.role) IN ('admin', 'administrateur')
   )
 );
 
-create policy "Admins can delete programs"
-on public.programs for delete to authenticated
-using (
-  exists (
-    select 1 from public.profiles p
-    where p.id = (select auth.uid())
-      and lower(p.role) in ('admin', 'administrateur')
-  )
-);
-
-create policy "Admins can read all programs"
-on public.programs for select to authenticated
-using (
-  exists (
-    select 1 from public.profiles p
-    where p.id = (select auth.uid())
-      and lower(p.role) in ('admin', 'administrateur')
+DROP POLICY IF EXISTS "Admins can delete programs" ON public.programs;
+CREATE POLICY "Admins can delete programs"
+ON public.programs FOR DELETE TO authenticated
+USING (
+  EXISTS (
+    SELECT 1 FROM public.profiles p
+    WHERE p.id = (SELECT auth.uid())
+      AND lower(p.role) IN ('admin', 'administrateur')
   )
 );
