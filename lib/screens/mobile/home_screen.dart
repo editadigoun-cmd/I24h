@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../core/config/i24h_config.dart';
+import '../../core/services/i24h_backend.dart';
 import '../../core/theme/app_theme.dart';
 import 'live_player_screen.dart';
 
@@ -94,31 +94,7 @@ class HomeScreen extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 12),
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(22), border: Border.all(color: AppColors.line)),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 58,
-                        height: 62,
-                        decoration: BoxDecoration(color: const Color(0xFFFFF7E6), borderRadius: BorderRadius.circular(16)),
-                        child: const Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-                          Text('18:00', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w900, color: AppColors.navy)),
-                          SizedBox(height: 3),
-                          Text('PRIÈRE', style: TextStyle(fontSize: 8, letterSpacing: 0.8, fontWeight: FontWeight.w800, color: AppColors.gold)),
-                        ]),
-                      ),
-                      const SizedBox(width: 14),
-                      const Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text('Temps de prière', style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.ink)),
-                        SizedBox(height: 5),
-                        Text('Un rendez-vous pour se recentrer et partager', style: TextStyle(fontSize: 12, height: 1.35, color: AppColors.muted)),
-                      ])),
-                      const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
-                    ],
-                  ),
-                ),
+                _NextProgramCard(onTap: onOpenProgramme),
                 const SizedBox(height: 24),
                 Container(
                   padding: const EdgeInsets.all(18),
@@ -230,4 +206,114 @@ class _QuickAction extends StatelessWidget {
       ),
     );
   }
+}
+
+
+class _NextProgramCard extends StatefulWidget {
+  final VoidCallback? onTap;
+  const _NextProgramCard({this.onTap});
+
+  @override
+  State<_NextProgramCard> createState() => _NextProgramCardState();
+}
+
+class _NextProgramCardState extends State<_NextProgramCard> {
+  late Future<List<Map<String, dynamic>>> _programs;
+
+  @override
+  void initState() {
+    super.initState();
+    _programs = I24HBackend.publishedPrograms();
+  }
+
+  String _formatTime(DateTime date) {
+    final day = date.day.toString().padLeft(2, '0');
+    final month = date.month.toString().padLeft(2, '0');
+    final hour = date.hour.toString().padLeft(2, '0');
+    final minute = date.minute.toString().padLeft(2, '0');
+    return '$day/$month · $hour:$minute';
+  }
+
+  @override
+  Widget build(BuildContext context) => FutureBuilder<List<Map<String, dynamic>>>(
+    future: _programs,
+    builder: (context, snapshot) {
+      final now = DateTime.now();
+      final upcoming = (snapshot.data ?? []).where((item) {
+        final start = DateTime.tryParse('${item['starts_at'] ?? ''}');
+        return start != null && start.isAfter(now);
+      }).toList();
+      final item = upcoming.isEmpty ? null : upcoming.first;
+      return Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        child: InkWell(
+          onTap: widget.onTap,
+          borderRadius: BorderRadius.circular(22),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(color: AppColors.line),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 58,
+                  height: 62,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFF7E6),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    snapshot.connectionState == ConnectionState.waiting
+                        ? Icons.schedule_rounded
+                        : Icons.calendar_month_rounded,
+                    color: AppColors.navy,
+                    size: 27,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item == null
+                            ? (snapshot.hasError ? 'Programme indisponible' : 'Prochain rendez-vous')
+                            : '${item['title'] ?? 'Émission I24H'}',
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15, color: AppColors.ink),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        snapshot.connectionState == ConnectionState.waiting
+                            ? 'Chargement du programme…'
+                            : snapshot.hasError
+                                ? 'Vérifiez votre connexion et réessayez.'
+                                : item == null
+                                    ? 'Les prochains rendez-vous seront annoncés ici.'
+                                    : [
+                                        if (DateTime.tryParse('${item['starts_at'] ?? ''}') != null)
+                                          _formatTime(DateTime.parse('${item['starts_at']}').toLocal()),
+                                        if ('${item['presenter'] ?? ''}'.trim().isNotEmpty)
+                                          '${item['presenter']}',
+                                      ].join(' · '),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12, height: 1.35, color: AppColors.muted),
+                      ),
+                    ],
+                  ),
+                ),
+                if (widget.onTap != null)
+                  const Icon(Icons.chevron_right_rounded, color: AppColors.muted),
+              ],
+            ),
+          ),
+        ),
+      );
+    },
+  );
 }
