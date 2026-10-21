@@ -25,9 +25,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       eyebrow: 'EN DIRECT, ENSEMBLE',
       title: 'Plus proches, même à distance.',
       description:
-          'Regardez la vidéo en direct, partagez vos réactions et échangez avec une communauté vivante.',
+          'Rejoignez le direct vidéo I24H et vivez les temps forts de la communauté, même à distance.',
       icon: Icons.groups_rounded,
-      tag: 'RÉACTIONS • COMMENTAIRES',
+      tag: 'DIRECT • COMMUNAUTÉ',
     ),
     _OnboardingSlide(
       eyebrow: 'VOTRE CONNEXION, VOTRE CHOIX',
