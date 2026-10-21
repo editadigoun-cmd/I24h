@@ -28,7 +28,8 @@ class _UserAppScreenState extends State<UserAppScreen> {
     super.initState();
     _programsFuture = I24HBackend.publishedPrograms();
     _replaysFuture = I24HBackend.publishedReplays();
-    _intentionsFuture = Supabase.instance.client.auth.currentUser == null
+    _intentionsFuture = !I24HConfig.backendReady ||
+            Supabase.instance.client.auth.currentUser == null
         ? Future.value(<Map<String, dynamic>>[])
         : I24HBackend.myPrayerIntentions();
   }
