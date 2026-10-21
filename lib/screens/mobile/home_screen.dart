@@ -4,7 +4,10 @@ import '../../core/theme/app_theme.dart';
 import 'live_player_screen.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final VoidCallback? onOpenProgramme;
+  final VoidCallback? onOpenIntentions;
+
+  const HomeScreen({super.key, this.onOpenProgramme, this.onOpenIntentions});
 
   void _openPlayer(BuildContext context) {
     Navigator.of(context).push(
@@ -72,15 +75,15 @@ class HomeScreen extends StatelessWidget {
                 Row(
                   children: [
                     const Expanded(child: Text('À découvrir', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w900, color: AppColors.ink))),
-                    TextButton(onPressed: () {}, child: const Text('Explorer')),
+                    TextButton(onPressed: onOpenProgramme, child: const Text('Explorer')),
                   ],
                 ),
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    Expanded(child: _QuickAction(icon: Icons.calendar_month_rounded, title: 'Programme', subtitle: 'Les rendez-vous', tint: const Color(0xFFEAF2FF), color: AppColors.blue, onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ouvrez Programme depuis le menu en bas.'))))),
+                    Expanded(child: _QuickAction(icon: Icons.calendar_month_rounded, title: 'Programme', subtitle: 'Les rendez-vous', tint: const Color(0xFFEAF2FF), color: AppColors.blue, onTap: onOpenProgramme ?? () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ouvrez Programme depuis le menu en bas.'))))),
                     const SizedBox(width: 12),
-                    Expanded(child: _QuickAction(icon: Icons.favorite_rounded, title: 'Intentions', subtitle: 'Un temps pour prier', tint: const Color(0xFFFFF2E8), color: const Color(0xFFB96D35), onTap: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ouvrez Intentions depuis le menu en bas.'))))),
+                    Expanded(child: _QuickAction(icon: Icons.favorite_rounded, title: 'Intentions', subtitle: 'Un temps pour prier', tint: const Color(0xFFFFF2E8), color: const Color(0xFFB96D35), onTap: onOpenIntentions ?? () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Ouvrez Intentions depuis le menu en bas.'))))),
                   ],
                 ),
                 const SizedBox(height: 28),
