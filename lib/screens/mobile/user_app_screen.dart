@@ -19,8 +19,6 @@ class UserAppScreen extends StatefulWidget {
 class _UserAppScreenState extends State<UserAppScreen> {
   int tab = 0;
   bool playing = false;
-  bool notifications = true;
-
   late Future<List<Map<String, dynamic>>> _programsFuture;
   late Future<List<Map<String, dynamic>>> _replaysFuture;
   late Future<List<Map<String, dynamic>>> _intentionsFuture;
@@ -52,16 +50,6 @@ class _UserAppScreenState extends State<UserAppScreen> {
     return Scaffold(
       appBar: tab == 0 ? null : AppBar(
         title: Text(titles[tab], style: const TextStyle(fontWeight: FontWeight.w800)),
-        actions: [
-          IconButton(
-            onPressed: _notifications,
-            icon: Badge(
-              isLabelVisible: notifications,
-              smallSize: 8,
-              child: const Icon(Icons.notifications_none_rounded),
-            ),
-          ),
-        ],
       ),
       body: IndexedStack(index: tab, children: pages),
       bottomNavigationBar: NavigationBar(
@@ -277,7 +265,6 @@ class _UserAppScreenState extends State<UserAppScreen> {
         if (user?.email != null) ...[const SizedBox(height: 5), Center(child: Text(user!.email!, style: const TextStyle(color: AppColors.muted)))],
         const SizedBox(height: 26),
         _setting(Icons.favorite_outline_rounded, 'Soutenir I24H', () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const DonationsScreen()))),
-        _setting(Icons.notifications_none_rounded, 'Notifications', _notifications),
         _setting(Icons.info_outline_rounded, 'À propos de I24H', _about),
         _setting(Icons.help_outline_rounded, 'Aide & assistance', _help),
         _setting(Icons.shield_outlined, 'Confidentialité', _privacy),
@@ -298,29 +285,6 @@ class _UserAppScreenState extends State<UserAppScreen> {
           trailing: const Icon(Icons.chevron_right_rounded),
         ),
       );
-
-  void _notifications() {
-    setState(() => notifications = false);
-    showModalBottomSheet(
-      context: context,
-      showDragHandle: true,
-      builder: (_) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: const [
-              Text('Notifications', style: TextStyle(fontSize: 23, fontWeight: FontWeight.w900)),
-              SizedBox(height: 18),
-              ListTile(leading: Icon(Icons.radio, color: AppColors.blue), title: Text('I24H est en direct'), subtitle: Text('Écoutez maintenant')),
-              ListTile(leading: Icon(Icons.calendar_month, color: AppColors.blue), title: Text('Votre programme vous attend'), subtitle: Text('Consultez les rendez-vous du jour')),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
 
   void _about() => _sheet('À propos de I24H', 'I24H — La voix qui vous accompagne. Une expérience radio, prière et communauté pensée pour rester simple, élégante et humaine. Version 1.0.0');
 
