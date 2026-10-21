@@ -58,15 +58,45 @@ export default {
     }
 
     const authorization = request.headers.get("Authorization") || "";
-    if (!authorization.startsWith("Bearer ")) return json({ error: "Authentification requise." }, 401);
     if (!env.LIVEKIT_API_SECRET || !env.SUPABASE_ANON_KEY) {
       return json({ error: "Configuration serveur incomplète. Les secrets LiveKit et Supabase doivent être configurés." }, 503);
     }
 
     let body;
     try { body = await request.json(); } catch { return json({ error: "Corps JSON invalide." }, 400); }
-    const participantName = typeof body.participant_name === "string" ? body.participant_name.trim().slice(0, 80) : "Participant I24H";
+    const participantName = typeof body.participant_name === "string" ? body.participant_name.trim().slice(0, 80) : "Auditeur I24H";
     const invitationCode = typeof body.invitation_code === "string" ? body.invitation_code.trim() : "";
+
+    // Public listeners may join the live room without creating an account.
+    // Anonymous tokens are strictly read-only and cannot publish audio, video or data.
+    if (!authorization.startsWith("Bearer ")) {
+      if (!isTokenRoute) return json({ error: "Authentification requise." }, 401);
+      if (invitationCode) return json({ error: "Connectez-vous pour utiliser un code d’invitation." }, 401);
+      const now = Math.floor(Date.now() / 1000);
+      const identity = "viewer-" + crypto.randomUUID();
+      const token = await signJwt({
+        iss: LIVEKIT_API_KEY,
+        sub: identity,
+        nbf: now - 5,
+        iat: now,
+        exp: now + 1800,
+        name: participantName || "Auditeur I24H",
+        video: {
+          roomJoin: true,
+          room: ROOM_NAME,
+          canPublish: false,
+          canSubscribe: true,
+          canPublishData: false,
+        },
+      }, env.LIVEKIT_API_SECRET);
+      return json({
+        server_url: LIVEKIT_URL,
+        participant_token: token,
+        room_name: ROOM_NAME,
+        role: "listener",
+        expires_in: 1800,
+      }, 201);
+    }
     const authResponse = await fetch(SUPABASE_URL + "/auth/v1/user", {
       headers: { "Authorization": authorization, "apikey": env.SUPABASE_ANON_KEY },
     });
