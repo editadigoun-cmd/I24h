@@ -143,7 +143,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   }
 
   void _tickSchedule() {
-    if (!mounted) return;
+    if (!mounted || !_isAnimator) return;
     final now = DateTime.now();
     final program = _assignedProgram;
     final end = DateTime.tryParse('${program?['ends_at'] ?? ''}')?.toLocal();
