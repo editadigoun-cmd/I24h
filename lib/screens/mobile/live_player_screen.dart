@@ -40,6 +40,11 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   VideoTrack? _remoteVideoTrack;
   bool _guestMicEnabled = false;
   bool _canSpeak = false;
+  bool _isAnimator = false;
+  Map<String, dynamic>? _assignedProgram;
+  DateTime _scheduleClock = DateTime.now();
+  Timer? _scheduleTimer;
+  bool _scheduleEndedHandled = false;
 
   String get _videoUrl => widget.isLive ? I24HConfig.liveVideoUrl.trim() : '';
 
@@ -55,6 +60,8 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
   void initState() {
     super.initState();
     _audioPlayer = AudioPlayer();
+    unawaited(_loadAnimatorSchedule());
+    _scheduleTimer = Timer.periodic(const Duration(seconds: 1), (_) => _tickSchedule());
     if (widget.isLive) {
       // Join LiveKit automatically when the live player opens. The HLS URL is
       // optional and is not the source of the interactive live session.
@@ -104,8 +111,103 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
     }
   }
 
+
+  Future<void> _loadAnimatorSchedule() async {
+    final client = Supabase.instance.client;
+    final user = client.auth.currentUser;
+    if (user == null) return;
+    try {
+      final profile = await client.from('profiles').select('full_name,role').eq('id', user.id).maybeSingle();
+      if (profile == null || '${profile['role'] ?? ''}'.toLowerCase() != 'animateur') return;
+      final name = '${profile['full_name'] ?? ''}'.trim();
+      if (name.isEmpty) return;
+      final rows = await client.from('programs')
+          .select('id,title,description,presenter,starts_at,ends_at')
+          .eq('is_published', true)
+          .eq('presenter', name)
+          .order('starts_at');
+      final now = DateTime.now().toUtc();
+      final candidates = List<Map<String, dynamic>>.from(rows).where((row) {
+        final start = DateTime.tryParse('${row['starts_at'] ?? ''}');
+        final end = DateTime.tryParse('${row['ends_at'] ?? ''}');
+        return start != null && end != null && end.isAfter(now);
+      }).toList();
+      if (!mounted) return;
+      setState(() {
+        _isAnimator = true;
+        _assignedProgram = candidates.isEmpty ? null : candidates.first;
+      });
+    } catch (error) {
+      debugPrint('I24H animator schedule load failed: $error');
+    }
+  }
+
+  void _tickSchedule() {
+    if (!mounted) return;
+    final now = DateTime.now();
+    final program = _assignedProgram;
+    final end = DateTime.tryParse('${program?['ends_at'] ?? ''}')?.toLocal();
+    final start = DateTime.tryParse('${program?['starts_at'] ?? ''}')?.toLocal();
+    setState(() => _scheduleClock = now);
+    if (_isAnimator && start != null && end != null && !now.isBefore(start) && !now.isBefore(end) && !_scheduleEndedHandled) {
+      _scheduleEndedHandled = true;
+      unawaited(_roomListener?.dispose());
+      _roomListener = null;
+      unawaited(_liveService.disconnect());
+      if (mounted) setState(() {
+        _playing = false;
+        _canSpeak = false;
+        _guestMicEnabled = false;
+        _remoteVideoTrack = null;
+        _errorMessage = 'Votre créneau est terminé. Le studio a été déconnecté.';
+      });
+    }
+  }
+
+  String _countdown(Duration duration) {
+    if (duration.isNegative) return '00:00:00';
+    final hours = duration.inHours.toString().padLeft(2, '0');
+    final minutes = (duration.inMinutes % 60).toString().padLeft(2, '0');
+    final seconds = (duration.inSeconds % 60).toString().padLeft(2, '0');
+    return '$hours:$minutes:$seconds';
+  }
+
+  Widget _animatorScheduleCard() {
+    final program = _assignedProgram;
+    final start = DateTime.tryParse('${program?['starts_at'] ?? ''}')?.toLocal();
+    final end = DateTime.tryParse('${program?['ends_at'] ?? ''}')?.toLocal();
+    final now = _scheduleClock;
+    final active = start != null && end != null && !now.isBefore(start) && now.isBefore(end);
+    final next = start != null && now.isBefore(start);
+    final remaining = active ? end!.difference(now) : next ? start!.difference(now) : Duration.zero;
+    final heading = active ? 'Temps restant à l’antenne' : next ? 'Votre direct commence dans' : 'Aucun créneau programmé';
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 18),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(color: const Color(0xFF102A4C), borderRadius: BorderRadius.circular(18), border: Border.all(color: active ? AppColors.cyan : const Color(0x334C8DFF))),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(children: [Icon(active ? Icons.mic_rounded : Icons.schedule_rounded, color: active ? AppColors.cyan : AppColors.gold), const SizedBox(width: 9), Expanded(child: Text(heading, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 13))) ]),
+        const SizedBox(height: 10),
+        Text(program == null ? 'L’administration doit vous attribuer et publier un créneau avant de pouvoir lancer le direct.' : '${program['title'] ?? 'Émission I24H'}', style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w900)),
+        if (program != null) ...[
+          const SizedBox(height: 5),
+          Text('${start == null ? 'Horaire à préciser' : TimeOfDay.fromDateTime(start).format(context)} — ${end == null ? 'Fin à préciser' : TimeOfDay.fromDateTime(end).format(context)}', style: const TextStyle(color: Color(0xFFA7BCD8), fontSize: 12)),
+          const SizedBox(height: 12),
+          Text(_countdown(remaining), style: const TextStyle(color: AppColors.cyan, fontSize: 28, fontWeight: FontWeight.w900)),
+          if (active && !_liveService.isConnected) ...[
+            const SizedBox(height: 8),
+            const Text('Créneau actif : reconnectez-vous au direct si le studio n’a pas démarré automatiquement.', style: TextStyle(color: Color(0xFFA7BCD8), fontSize: 11, height: 1.4)),
+            Align(alignment: Alignment.centerRight, child: TextButton.icon(onPressed: _loading ? null : _togglePlayback, icon: const Icon(Icons.play_arrow_rounded), label: const Text('Rejoindre le studio'))),
+          ],
+        ],
+      ]),
+    );
+  }
+
   @override
   void dispose() {
+    _scheduleTimer?.cancel();
     unawaited(_roomListener?.dispose());
     unawaited(_liveService.disconnect());
     unawaited(_audioPlayer.dispose());
@@ -465,6 +567,7 @@ class _LivePlayerScreenState extends State<LivePlayerScreen> {
                         widget.subtitle,
                         style: const TextStyle(color: Color(0xFFB8C9E2), fontSize: 13, height: 1.45),
                       ),
+                      if (_isAnimator) _animatorScheduleCard(),
                       const SizedBox(height: 20),
                       if (widget.isLive)
                         Container(
