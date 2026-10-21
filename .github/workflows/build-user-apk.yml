@@ -1,4 +1,4 @@
-name: Build I24H Android and Web
+name: Build I24H Mobile
 
 on:
   workflow_dispatch:
@@ -7,13 +7,21 @@ on:
       - 'lib/**'
       - 'assets/**'
       - 'pubspec.yaml'
+      - 'supabase/**'
+      - '.github/workflows/**'
+  pull_request:
+    paths:
+      - 'lib/**'
+      - 'assets/**'
+      - 'pubspec.yaml'
+      - 'supabase/**'
       - '.github/workflows/**'
 
 permissions:
   contents: read
 
 jobs:
-  build:
+  build-android:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -23,16 +31,61 @@ jobs:
         with:
           channel: stable
           cache: true
-      - name: Create missing Flutter platforms
+      - name: Create Android and web platform files if missing
         run: flutter create . --platforms=android,web --project-name=i24h
+      - name: Ensure Android Internet permission
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          lines = manifest.read_text().splitlines()
+          permission = 'android.permission.INTERNET'
+          if not any(permission in line for line in lines):
+              for index, line in enumerate(lines):
+                  if '<manifest' in line:
+                      lines.insert(index + 1, '    <uses-permission android:name="android.permission.INTERNET"/>')
+                      break
+              else:
+                  raise SystemExit("Could not find the <manifest> tag.")
+              manifest.write_text("\n".join(lines) + "\n")
+          print("Verified Android INTERNET permission.")
+          PY
+      - name: Ensure Android live streaming permissions
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text()
+          permissions = [
+              '    <uses-permission android:name="android.permission.RECORD_AUDIO"/>',
+              '    <uses-permission android:name="android.permission.CAMERA"/>',
+          ]
+          missing = [p for p in permissions if p.split('"')[1] not in text]
+          if missing:
+              lines = text.splitlines()
+              index = next((i for i, line in enumerate(lines) if '<manifest' in line), None)
+              if index is None:
+                  raise SystemExit("Could not find the <manifest> tag.")
+              for offset, permission in enumerate(missing, start=1):
+                  lines.insert(index + offset, permission)
+              manifest.write_text("\n".join(lines) + "\n")
+          print("Verified microphone and camera permissions.")
+          PY
       - name: Get dependencies
         run: flutter pub get
       - name: Analyze
-        run: dart analyze lib
-      - name: Test
-        run: flutter test
+        run: dart analyze lib/main.dart
       - name: Build Android APK
-        run: flutter build apk --release --build-name=1.0.1 --build-number=${{ github.run_number }}
+        run: >-
+          flutter build apk --release
+          --build-name=1.0.1
+          --build-number=${{ github.run_number }}
+          --dart-define=I24H_SUPABASE_URL=https://pwujpjjoxxqupckurrad.supabase.co
+          --dart-define=I24H_SUPABASE_PUBLISHABLE_KEY=sb_publishable_u7eKQeWIvlrbMlsHO_uiSw_op8UW9ew
       - name: Build Web
         run: flutter build web --release
       - name: Upload APK

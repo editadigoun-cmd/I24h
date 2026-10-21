@@ -1,0 +1,10 @@
+{
+  "name": "I24H — Prière & Direct",
+  "short_name": "I24H",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#0B3D91",
+  "theme_color": "#0B3D91",
+  "description": "Prière, enseignement et communauté en direct 24h/24.",
+  "orientation": "portrait-primary"
+}

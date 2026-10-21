@@ -6,5 +6,84 @@ import '../../screens/animateur/animateur_replays_screen.dart';
 import '../../screens/animateur/animateur_profile_screen.dart';
 import '../theme/app_theme.dart';
 
-class AnimateurShell extends StatefulWidget {const AnimateurShell({super.key});@override State<AnimateurShell> createState()=>_AnimateurShellState();}
-class _AnimateurShellState extends State<AnimateurShell>{int index=0;final pages=const[AnimateurDashboardContent(),AnimateurLiveScreen(),AnimateurPlanningScreen(),AnimateurReplaysScreen(),AnimateurProfileScreen()];@override Widget build(BuildContext context)=>Scaffold(appBar:AppBar(title:const Text('Studio I24H',style:TextStyle(fontWeight:FontWeight.w800)),actions:[IconButton(onPressed:()=>ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content:Text('Notifications studio'))),icon:const Icon(Icons.notifications_none_rounded))]),body:Row(children:[if(MediaQuery.sizeOf(context).width>=850)NavigationRail(selectedIndex:index,onDestinationSelected:(v)=>setState(()=>index=v),labelType:NavigationRailLabelType.all,destinations:const[NavigationRailDestination(icon:Icon(Icons.dashboard_outlined),label:Text('Accueil')),NavigationRailDestination(icon:Icon(Icons.mic_none),label:Text('Direct')),NavigationRailDestination(icon:Icon(Icons.calendar_month_outlined),label:Text('Planning')),NavigationRailDestination(icon:Icon(Icons.replay_outlined),label:Text('Replays')),NavigationRailDestination(icon:Icon(Icons.person_outline),label:Text('Profil'))]),Expanded(child:pages[index])]),bottomNavigationBar:MediaQuery.sizeOf(context).width<850?NavigationBar(selectedIndex:index,onDestinationSelected:(v)=>setState(()=>index=v),indicatorColor:AppColors.navy.withOpacity(.1),destinations:const[NavigationDestination(icon:Icon(Icons.dashboard_outlined),label:'Accueil'),NavigationDestination(icon:Icon(Icons.mic_none),label:'Direct'),NavigationDestination(icon:Icon(Icons.calendar_month_outlined),label:'Planning'),NavigationDestination(icon:Icon(Icons.replay_outlined),label:'Replays'),NavigationDestination(icon:Icon(Icons.person_outline),label:'Profil')]):null);}
+class AnimateurShell extends StatefulWidget {
+  const AnimateurShell({super.key});
+  @override
+  State<AnimateurShell> createState() => _AnimateurShellState();
+}
+
+class _AnimateurShellState extends State<AnimateurShell> {
+  int index = 0;
+  final pages = const [AnimateurDashboardContent(), AnimateurLiveScreen(), AnimateurPlanningScreen(), AnimateurReplaysScreen(), AnimateurProfileScreen()];
+  final labels = const ['Vue d’ensemble', 'Studio de direct', 'Mon planning', 'Médias', 'Mon profil'];
+  final icons = const [Icons.grid_view_rounded, Icons.sensors_rounded, Icons.calendar_month_rounded, Icons.library_music_rounded, Icons.person_rounded];
+
+  @override
+  Widget build(BuildContext context) {
+    final wide = MediaQuery.sizeOf(context).width >= 900;
+    return Scaffold(
+      backgroundColor: const Color(0xFFF4F7FC),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        surfaceTintColor: Colors.white,
+        toolbarHeight: 76,
+        title: Row(children: [
+          if (!wide) const Padding(padding: EdgeInsets.only(right: 7), child: Icon(Icons.graphic_eq_rounded, color: AppColors.blue, size: 24)),
+          Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Text(wide ? 'I24H · Studio Animateur' : 'I24H Animateur', style: TextStyle(fontSize: wide ? 19 : 15, fontWeight: FontWeight.w900, color: AppColors.ink)),
+            if (wide) ...const [
+              SizedBox(height: 3),
+              Text('Préparez et animez vos émissions', style: TextStyle(fontSize: 12, color: AppColors.muted, fontWeight: FontWeight.w500)),
+            ],
+          ]),
+        ]),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 4),
+            child: FilledButton.icon(
+              onPressed: () => setState(() => index = 1),
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF19A974),
+                foregroundColor: Colors.white,
+                padding: EdgeInsets.symmetric(horizontal: wide ? 16 : 8),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+              ),
+              icon: const Icon(Icons.sensors_rounded, size: 19),
+              label: Text(wide ? 'Démarrer le live' : 'LIVE', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 11)),
+            ),
+          ),
+          IconButton(tooltip: 'Notifications', onPressed: () => ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Les notifications seront reliées au compte animateur.'))), icon: const Icon(Icons.notifications_none_rounded)),
+          const Padding(padding: EdgeInsets.only(left: 2, right: 10), child: CircleAvatar(backgroundColor: AppColors.sky, child: Icon(Icons.mic_rounded, color: AppColors.blue))),
+        ],
+      ),
+      body: Row(children: [
+        if (wide) Container(width: 272, color: const Color(0xFF09172F), child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          Padding(padding: const EdgeInsets.fromLTRB(24, 26, 20, 24), child: Row(children: [
+            Container(width: 46, height: 46, decoration: BoxDecoration(gradient: const LinearGradient(colors: [AppColors.blue, AppColors.cyan]), borderRadius: BorderRadius.circular(15)), child: const Icon(Icons.graphic_eq_rounded, color: Colors.white, size: 28)),
+            const SizedBox(width: 12),
+            const Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('I24H', style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w900, letterSpacing: 1)), Text('BROADCAST STUDIO', style: TextStyle(color: Color(0xFF91A5C7), fontSize: 9, fontWeight: FontWeight.w800, letterSpacing: 1.4))]),
+          ])),
+          Padding(padding: const EdgeInsets.fromLTRB(24, 0, 16, 10), child: Text('MON ESPACE', style: TextStyle(color: Colors.white.withOpacity(.46), fontSize: 10, fontWeight: FontWeight.w900, letterSpacing: 1.5))),
+          Expanded(child: ListView(padding: const EdgeInsets.symmetric(horizontal: 12), children: List.generate(labels.length, (i) {
+            final selected = index == i;
+            return Padding(padding: const EdgeInsets.only(bottom: 5), child: Material(color: selected ? const Color(0xFF1D3B6A) : Colors.transparent, borderRadius: BorderRadius.circular(13), child: InkWell(borderRadius: BorderRadius.circular(13), onTap: () => setState(() => index = i), child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 15),
+              decoration: BoxDecoration(borderRadius: BorderRadius.circular(13), border: Border.all(color: selected ? const Color(0xFF315D9A) : Colors.transparent)),
+              child: Row(children: [Icon(icons[i], color: selected ? const Color(0xFF80D9FF) : const Color(0xFFB5C3DA), size: 21), const SizedBox(width: 13), Expanded(child: Text(labels[i], style: TextStyle(color: selected ? Colors.white : const Color(0xFFD1DBEA), fontSize: 14, fontWeight: selected ? FontWeight.w800 : FontWeight.w600))), if (selected) Container(width: 5, height: 5, decoration: const BoxDecoration(color: AppColors.cyan, shape: BoxShape.circle))]),
+            ))));
+          }))),
+          Container(margin: const EdgeInsets.all(14), padding: const EdgeInsets.all(15), decoration: BoxDecoration(color: Colors.white.withOpacity(.06), borderRadius: BorderRadius.circular(16), border: Border.all(color: Colors.white.withOpacity(.08))), child: const Row(children: [Icon(Icons.headphones_rounded, color: AppColors.cyan, size: 22), SizedBox(width: 10), Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [Text('Studio I24H', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 12)), SizedBox(height: 3), Text('Prêt pour votre direct', style: TextStyle(color: Color(0xFF91A5C7), fontSize: 11))]))])),
+        ])),
+        Expanded(child: AnimatedSwitcher(duration: const Duration(milliseconds: 220), child: KeyedSubtree(key: ValueKey(index), child: pages[index]))),
+      ]),
+      floatingActionButton: !wide && index != 1 ? FloatingActionButton.extended(onPressed: () => setState(() => index = 1), backgroundColor: const Color(0xFF19A974), foregroundColor: Colors.white, icon: const Icon(Icons.sensors_rounded), label: const Text('Démarrer le live', style: TextStyle(fontWeight: FontWeight.w800))) : null,
+      bottomNavigationBar: !wide ? NavigationBar(height: 72, selectedIndex: index, onDestinationSelected: (v) => setState(() => index = v), destinations: const [
+        NavigationDestination(icon: Icon(Icons.grid_view_rounded), label: 'Accueil'),
+        NavigationDestination(icon: Icon(Icons.sensors_rounded), label: 'Direct'),
+        NavigationDestination(icon: Icon(Icons.calendar_month_rounded), label: 'Planning'),
+        NavigationDestination(icon: Icon(Icons.library_music_rounded), label: 'Médias'),
+        NavigationDestination(icon: Icon(Icons.person_rounded), label: 'Profil'),
+      ]) : null,
+    );
+  }
+}
