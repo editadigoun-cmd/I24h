@@ -117,7 +117,7 @@ export default {
     // exact profile name. The database clock is used to avoid trusting a device clock.
     // Admins retain operational access for emergency continuity.
     let assignedSlot = null;
-    if (role === "animateur" && isTokenRoute && !invitationCode) {
+    if (role === "animateur" && isTokenRoute) {
       const profileResponse = await fetch(
         SUPABASE_URL + "/rest/v1/profiles?id=eq." + encodeURIComponent(user.id) + "&select=full_name&limit=1",
         { headers: { "Authorization": authorization, "apikey": env.SUPABASE_ANON_KEY } }
