@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:livekit_client/livekit_client.dart';
+import '../../core/services/i24h_live_service.dart';
 import '../../core/theme/app_theme.dart';
 
 class UserAppScreen extends StatefulWidget {
@@ -467,34 +469,7 @@ class _UserAppScreenState extends State<UserAppScreen> {
       isScrollControlled: true,
       showDragHandle: true,
       backgroundColor: AppColors.navy,
-      builder: (sheetContext) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 30),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(width: 100, height: 100, decoration: BoxDecoration(gradient: const LinearGradient(colors: [Color(0xFF1B4B83), Color(0xFF0D203B)]), borderRadius: BorderRadius.circular(28)), child: const Icon(Icons.graphic_eq_rounded, color: AppColors.gold, size: 52)),
-            const SizedBox(height: 20),
-            Container(padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5), decoration: BoxDecoration(color: AppColors.live, borderRadius: BorderRadius.circular(8)), child: const Text('LIVE · I24H RADIO', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10, letterSpacing: 1))),
-            const SizedBox(height: 15),
-            const Text('La radio en continu', style: TextStyle(color: Colors.white, fontSize: 23, fontWeight: FontWeight.w900)),
-            const SizedBox(height: 7),
-            const Text('Une présence, une parole, un moment.', style: TextStyle(color: Colors.white70, fontSize: 13)),
-            const SizedBox(height: 22),
-            _waveform(),
-            const SizedBox(height: 22),
-            IconButton.filled(
-              style: IconButton.styleFrom(backgroundColor: Colors.white, foregroundColor: AppColors.navy, fixedSize: const Size(68, 68)),
-              onPressed: () {
-                setState(() => playing = !playing);
-                Navigator.pop(sheetContext);
-                if (playing) _snack('Aperçu visuel activé. Le flux audio réel doit encore être configuré.');
-              },
-              icon: Icon(playing ? Icons.pause_rounded : Icons.play_arrow_rounded, size: 35),
-            ),
-            const SizedBox(height: 18),
-            const Text('Interface de lecteur prête · source audio à connecter', textAlign: TextAlign.center, style: TextStyle(color: Colors.white54, fontSize: 11)),
-          ]),
-        ),
-      ),
+      builder: (_) => const _I24HLivePlayer(),
     );
   }
 
@@ -562,4 +537,107 @@ class _UserAppScreenState extends State<UserAppScreen> {
   }
 
   void _snack(String message) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+}
+
+
+class _I24HLivePlayer extends StatefulWidget {
+  const _I24HLivePlayer();
+
+  @override
+  State<_I24HLivePlayer> createState() => _I24HLivePlayerState();
+}
+
+class _I24HLivePlayerState extends State<_I24HLivePlayer> {
+  final I24HLiveService _service = I24HLiveService();
+  EventsListener<RoomEvent>? _listener;
+  VideoTrack? _videoTrack;
+  bool _connecting = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _connect();
+  }
+
+  Future<void> _connect() async {
+    try {
+      final room = await _service.connect(
+        participantName: 'Spectateur I24H',
+        publishAudio: false,
+      );
+      final listener = room.createListener();
+      _listener = listener;
+      listener.on<TrackSubscribed>((event) {
+        if (event.track is VideoTrack && mounted) {
+          setState(() => _videoTrack = event.track as VideoTrack);
+        }
+      });
+      listener.on<TrackUnsubscribed>((event) {
+        if (event.track == _videoTrack && mounted) {
+          setState(() => _videoTrack = null);
+        }
+      });
+      for (final participant in room.remoteParticipants.values) {
+        for (final publication in participant.videoTrackPublications.values) {
+          final track = publication.track;
+          if (track is VideoTrack) _videoTrack = track;
+        }
+      }
+      if (mounted) setState(() => _connecting = false);
+    } catch (error) {
+      if (mounted) setState(() {
+        _connecting = false;
+        _error = error.toString().replaceFirst('Bad state: ', '');
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _listener?.dispose();
+    _service.disconnect();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => SafeArea(
+    child: Padding(
+      padding: const EdgeInsets.fromLTRB(20, 10, 20, 28),
+      child: Column(mainAxisSize: MainAxisSize.min, children: [
+        Row(children: [
+          const Expanded(child: Text('I24H · DIRECT', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 12, letterSpacing: 1))),
+          Container(padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5), decoration: BoxDecoration(color: AppColors.live, borderRadius: BorderRadius.circular(8)), child: const Text('LIVE', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 10))),
+        ]),
+        const SizedBox(height: 16),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: AspectRatio(
+            aspectRatio: 16 / 9,
+            child: Container(
+              color: const Color(0xFF081426),
+              alignment: Alignment.center,
+              child: _videoTrack != null
+                ? VideoTrackRenderer(_videoTrack!, fit: VideoViewFit.cover)
+                : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    Icon(_connecting ? Icons.sync_rounded : Icons.graphic_eq_rounded, color: AppColors.gold, size: 48),
+                    const SizedBox(height: 10),
+                    Text(_connecting ? 'Connexion au direct…' : _error == null ? 'En attente de la vidéo de l’animateur' : 'Connexion impossible', style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 12), textAlign: TextAlign.center),
+                  ]),
+            ),
+          ),
+        ),
+        const SizedBox(height: 18),
+        const Text('La radio en continu', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.w900)),
+        const SizedBox(height: 6),
+        Text(_error ?? (_connecting ? 'Connexion audio et vidéo à LiveKit…' : _videoTrack == null ? 'Le son se connecte automatiquement. La vidéo apparaît lorsque l’animateur active sa caméra.' : 'Vous regardez le direct vidéo I24H.'), textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 12, height: 1.45)),
+        if (_error != null) ...[
+          const SizedBox(height: 12),
+          TextButton.icon(onPressed: () { setState(() { _connecting = true; _error = null; }); _connect(); }, icon: const Icon(Icons.refresh_rounded, color: Colors.white), label: const Text('Réessayer', style: TextStyle(color: Colors.white))),
+        ],
+        const SizedBox(height: 12),
+        SizedBox(width: double.infinity, child: OutlinedButton.icon(onPressed: () => Navigator.pop(context), icon: const Icon(Icons.close_rounded), label: const Text('Fermer le lecteur'), style: OutlinedButton.styleFrom(foregroundColor: Colors.white, side: const BorderSide(color: Colors.white38)))),
+      ]),
+    ),
+  );
 }
