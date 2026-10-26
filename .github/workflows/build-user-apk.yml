@@ -6,6 +6,7 @@ on:
     paths:
       - 'lib/**'
       - 'assets/**'
+      - 'test/**'
       - 'pubspec.yaml'
       - '.github/workflows/**'
 
@@ -24,7 +25,7 @@ jobs:
           channel: stable
           cache: true
       - name: Create missing Flutter platforms
-        run: flutter create . --platforms=android,web --project-name=i24h
+        run: flutter create . --platforms=android,web --project-name=i24h_native
       - name: Get dependencies
         run: flutter pub get
       - name: Analyze
