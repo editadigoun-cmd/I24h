@@ -40,7 +40,7 @@ jobs:
               if index is None:
                   raise SystemExit("Could not find the <manifest> tag.")
               lines.insert(index + 1, '    <uses-permission android:name="android.permission.RECORD_AUDIO"/>')
-              manifest.write_text("\\n".join(lines) + "\\n")
+              manifest.write_text("\n".join(lines) + "\n")
           print("Verified Android microphone permission.")
           PY
       - name: Get dependencies
