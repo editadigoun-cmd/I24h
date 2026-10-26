@@ -26,7 +26,7 @@ jobs:
           cache: true
       - name: Create missing Flutter platforms
         run: flutter create . --platforms=android,web --project-name=i24h_native
-      - name: Ensure Android microphone permission for LiveKit
+      - name: Ensure Android camera and microphone permissions for LiveKit
         shell: bash
         run: |
           python3 - <<'PY'
