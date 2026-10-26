@@ -47,10 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
           return;
         }
       } else {
-        await auth.signInWithPassword(
-          email: email.text.trim(),
-          password: pass.text,
-        );
+        await auth.signInWithPassword(email: email.text.trim(), password: pass.text);
       }
       await _openCorrectSpace();
     } on AuthException catch (error) {
@@ -68,18 +65,12 @@ class _LoginScreenState extends State<LoginScreen> {
     var route = '/mobile';
     if (user != null) {
       try {
-        final profile = await client
-            .from('profiles')
-            .select('role')
-            .eq('id', user.id)
-            .maybeSingle();
-        switch (profile?['role'] as String?) {
-          case 'admin':
-            route = '/admin';
-          case 'animateur':
-            route = '/animateur';
-          default:
-            route = '/mobile';
+        final profile = await client.from('profiles').select('role').eq('id', user.id).maybeSingle();
+        final role = profile?['role'] as String?;
+        if (role == 'admin') {
+          route = '/admin';
+        } else if (role == 'animateur') {
+          route = '/animateur';
         }
       } catch (_) {
         // A missing profile must never grant elevated access.
@@ -123,8 +114,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: const Icon(Icons.graphic_eq_rounded, color: Colors.white, size: 28),
             ),
             const SizedBox(height: 34),
-            Text(signup ? 'Créer votre espace I24H' : 'Bienvenue chez I24H',
-                style: Theme.of(context).textTheme.displaySmall),
+            Text(signup ? 'Créer votre espace I24H' : 'Bienvenue chez I24H', style: Theme.of(context).textTheme.displaySmall),
             const SizedBox(height: 10),
             Text(
               signup ? 'Une expérience personnelle, élégante et connectée.' : 'Retrouvez votre radio, vos programmes et votre communauté.',
@@ -132,12 +122,18 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 30),
             if (signup) ...[
-              TextField(controller: name, textCapitalization: TextCapitalization.words,
-                  decoration: const InputDecoration(labelText: 'Nom complet', prefixIcon: Icon(Icons.person_outline_rounded))),
+              TextField(
+                controller: name,
+                textCapitalization: TextCapitalization.words,
+                decoration: const InputDecoration(labelText: 'Nom complet', prefixIcon: Icon(Icons.person_outline_rounded)),
+              ),
               const SizedBox(height: 14),
             ],
-            TextField(controller: email, keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(labelText: 'Adresse e-mail', prefixIcon: Icon(Icons.mail_outline_rounded))),
+            TextField(
+              controller: email,
+              keyboardType: TextInputType.emailAddress,
+              decoration: const InputDecoration(labelText: 'Adresse e-mail', prefixIcon: Icon(Icons.mail_outline_rounded)),
+            ),
             const SizedBox(height: 14),
             TextField(
               controller: pass,
