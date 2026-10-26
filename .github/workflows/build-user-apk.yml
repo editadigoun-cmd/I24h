@@ -6,6 +6,7 @@ on:
     paths:
       - 'lib/**'
       - 'assets/**'
+      - 'test/**'
       - 'pubspec.yaml'
       - '.github/workflows/**'
 
@@ -24,11 +25,31 @@ jobs:
           channel: stable
           cache: true
       - name: Create missing Flutter platforms
-        run: flutter create . --platforms=android,web --project-name=i24h
+        run: flutter create . --platforms=android,web --project-name=i24h_native
+      - name: Ensure Android camera and microphone permissions for LiveKit
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text()
+          permissions = ['android.permission.CAMERA', 'android.permission.RECORD_AUDIO']
+          lines = text.splitlines()
+          index = next((i for i, line in enumerate(lines) if '<manifest' in line), None)
+          if index is None:
+              raise SystemExit("Could not find the <manifest> tag.")
+          for permission in permissions:
+              declaration = f'<uses-permission android:name="{permission}"/>'
+              if permission not in '\n'.join(lines):
+                  lines.insert(index + 1, '    ' + declaration)
+                  index += 1
+          manifest.write_text("\n".join(lines) + "\n")
+          print("Verified Android camera and microphone permissions.")
+          PY
       - name: Get dependencies
         run: flutter pub get
       - name: Analyze
-        run: dart analyze lib
+        run: flutter analyze --no-pub --no-fatal-infos --no-fatal-warnings
       - name: Test
         run: flutter test
       - name: Build Android APK

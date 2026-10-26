@@ -1,17 +1,19 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const navy = Color(0xFF0B1F3A);
-  static const blue = Color(0xFF1463FF);
-  static const sky = Color(0xFFEAF2FF);
-  static const gold = Color(0xFFC89B3C);
-  static const ink = Color(0xFF111827);
+  static const navy = Color(0xFF081426);
+  static const navySoft = Color(0xFF10233F);
+  static const blue = Color(0xFF1769FF);
+  static const sky = Color(0xFFEAF1FF);
+  static const gold = Color(0xFFD7B56D);
+  static const ink = Color(0xFF101828);
   static const muted = Color(0xFF667085);
-  static const background = Color(0xFFF7F9FC);
+  static const background = Color(0xFFF4F7FC);
   static const surface = Colors.white;
-  static const line = Color(0xFFE4E7EC);
+  static const line = Color(0xFFE4EAF2);
   static const success = Color(0xFF168653);
-  static const danger = Color(0xFFD92D20);
+  static const danger = Color(0xFFE5484D);
+  static const live = Color(0xFFFF4057);
 }
 
 class AppTheme {
@@ -25,13 +27,16 @@ class AppTheme {
       colorScheme: scheme.copyWith(
         primary: AppColors.blue,
         surface: AppColors.surface,
+        error: AppColors.danger,
       ),
       scaffoldBackgroundColor: AppColors.background,
       fontFamily: 'Roboto',
       appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.transparent,
+        backgroundColor: AppColors.background,
         elevation: 0,
+        scrolledUnderElevation: 0,
         foregroundColor: AppColors.ink,
+        centerTitle: false,
       ),
       textTheme: const TextTheme(
         displaySmall: TextStyle(
@@ -42,9 +47,9 @@ class AppTheme {
         headlineSmall: TextStyle(
           fontWeight: FontWeight.w800,
           color: AppColors.ink,
-          letterSpacing: -0.4,
+          letterSpacing: -0.5,
         ),
-        titleLarge: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
+        titleLarge: TextStyle(fontWeight: FontWeight.w800, color: AppColors.ink),
         titleMedium: TextStyle(fontWeight: FontWeight.w700, color: AppColors.ink),
         bodyLarge: TextStyle(color: AppColors.ink, height: 1.45),
         bodyMedium: TextStyle(color: AppColors.muted, height: 1.4),
@@ -78,9 +83,22 @@ class AppTheme {
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(22),
           side: const BorderSide(color: AppColors.line),
         ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        height: 70,
+        backgroundColor: Colors.white,
+        indicatorColor: AppColors.sky,
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          final selected = states.contains(WidgetState.selected);
+          return TextStyle(
+            fontSize: 11,
+            fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+            color: selected ? AppColors.blue : AppColors.muted,
+          );
+        }),
       ),
     );
   }
