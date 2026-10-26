@@ -26,6 +26,23 @@ jobs:
           cache: true
       - name: Create missing Flutter platforms
         run: flutter create . --platforms=android,web --project-name=i24h_native
+      - name: Ensure Android microphone permission for LiveKit
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          manifest = Path("android/app/src/main/AndroidManifest.xml")
+          text = manifest.read_text()
+          permission = 'android.permission.RECORD_AUDIO'
+          if permission not in text:
+              lines = text.splitlines()
+              index = next((i for i, line in enumerate(lines) if '<manifest' in line), None)
+              if index is None:
+                  raise SystemExit("Could not find the <manifest> tag.")
+              lines.insert(index + 1, '    <uses-permission android:name="android.permission.RECORD_AUDIO"/>')
+              manifest.write_text("\\n".join(lines) + "\\n")
+          print("Verified Android microphone permission.")
+          PY
       - name: Get dependencies
         run: flutter pub get
       - name: Analyze
